@@ -16,11 +16,37 @@ def sinAlpha(alpha, A, n):
     return A*np.sin(np.deg2rad(alpha))**n
 
 if __name__ == '__main__':
+    key = 'quiet4'
+
+    annotate_plot = True
     # A dictionary of times to analyze
-    tBoundsDict = {'q':[datetime(2017, 3, 31, 11, 15, 0), datetime(2017, 3, 31, 11, 17, 0)], 'm1':[datetime(2017, 3, 31, 11, 17, 0), datetime(2017, 3, 31, 11, 17, 20)], 'm2':[datetime(2017, 3, 31, 11, 17, 10), datetime(2017, 3, 31, 11, 17, 20)],
-    'bigOne':[datetime(2017, 3, 31, 11, 17, 13), datetime(2017, 3, 31, 11, 17, 18)],
-    'smallOne':[datetime(2017, 3, 31, 11, 17, 9, 500000), datetime(2017, 3, 31, 11, 17, 10, 500000)]}
-    tBounds = tBoundsDict['q']
+    tBoundsDict = {
+        'm1':[datetime(2017, 3, 31, 11, 17, 0), 
+            datetime(2017, 3, 31, 11, 17, 20)], 
+        'm2':[datetime(2017, 3, 31, 11, 17, 10), 
+            datetime(2017, 3, 31, 11, 17, 20)],
+        'bigOne':[datetime(2017, 3, 31, 11, 17, 13), 
+            datetime(2017, 3, 31, 11, 17, 18)],
+        'smallOne':[datetime(2017, 3, 31, 11, 17, 9, 500000), 
+            datetime(2017, 3, 31, 11, 17, 10, 500000)], 
+        'quiet0':[datetime(2017, 3, 31, 2, 0), 
+            datetime(2017, 3, 31, 2, 20)],
+        'quiet1':[datetime(2017, 3, 31, 2, 31), 
+            datetime(2017, 3, 31, 2, 53)],
+        # Right before muBurst
+        'quiet2':[datetime(2017, 3, 31, 11, 15, 0), 
+            datetime(2017, 3, 31, 11, 17, 0)],
+        'quiet3':[datetime(2017, 3, 31, 19, 45), 
+            datetime(2017, 3, 31, 20, 0)],
+        'quiet4':[datetime(2017, 3, 31, 19, 45), 
+            datetime(2017, 3, 31, 20, 54)]
+        }
+    tBounds = tBoundsDict[key]
+
+
+
+    p0Dict = {'quiet0':[10**-1, 2], 'quiet1':[10**-4, 1.5], 
+             'quiet2':[10**-1, 2], 'quiet3':[10**-1, 2], 'quiet4':[10**-1, 2]}
 
     # Script parameters
     rb_id = 'A'
@@ -43,16 +69,19 @@ if __name__ == '__main__':
     # Do the least squares fitting.
     for i in range(psdObj.meanPsd.shape[0]):
         popt[i, :], pcov = scipy.optimize.curve_fit(sinAlpha, alpha0Arr[ida], 
-                    psdObj.meanPsd[i, ida], p0 = [10**-4, 1.5], sigma = None, 
+                    psdObj.meanPsd[i, ida], p0 = p0Dict[key], 
+                    sigma = psdObj.meanPsdErr[i, ida], 
                     absolute_sigma = False)
         perr[i, :] = np.sqrt(np.diag(pcov))
     print(popt, perr)
 
     # save the fit parameters and errors.
-    np.save('../data/quiet_fit_popt', popt)
-    np.save('../data/quiet_fit_perr', perr)
+    np.save('/home/mike/research/mageis-microburst/data/psd_fit_popt_{}_{}'.format(
+        tBounds[0].strftime('%H%M%S'), tBounds[1].strftime('%H%M%S')), popt)
+    np.save('/home/mike/research/mageis-microburst/data/psd_fit_perr_{}_{}'.format(
+        tBounds[0].strftime('%H%M%S'), tBounds[1].strftime('%H%M%S')), perr)
 
-    fitAlphaArr = np.arange(10, 180)
+    fitAlphaArr = np.arange(180)
     ### PLOTTING ###
     fig = plt.figure(figsize=(15, 10), dpi = 80, facecolor = 'white')
     plt.rcParams.update({'font.size': 15})
@@ -63,6 +92,13 @@ if __name__ == '__main__':
             label = '{} keV'.format(psdObj.Emid[i]), ls = 'None', marker = 'o',
             yerr = psdObj.meanPsdErr[i, ida])
         psdPlt.plot(fitAlphaArr, sinAlpha(fitAlphaArr, popt[i, 0], popt[i, 1]))
+    
+
+        # Add fit patameters to plot
+        if annotate_plot:
+            fit_txt = 'A = {:.2e}, n = {:.2f}'.format(popt[i, 0], popt[i, 1])
+            psdPlt.text(10, popt[i, 0], fit_txt)#, transform=psdPlt.transAxes)
+        
     psdPlt.set(yscale = 'log', xlabel = r'$\alpha_{eq}$', 
         ylabel = r'PSD $c^3/(cm \ MeV)^3$', xlim = (0, 180))
 
@@ -70,5 +106,6 @@ if __name__ == '__main__':
             tBounds[0].date(), tBounds[0].strftime("%H:%M:%S"), 
             tBounds[1].strftime("%H:%M:%S")))
     psdPlt.legend()
+    plt.savefig('/home/mike/research/mageis-microburst/data/psd_fit_{}_{}.png'.format(tBounds[0].strftime('%H%M%S'), tBounds[1].strftime('%H%M%S')))
     plt.show()
         
