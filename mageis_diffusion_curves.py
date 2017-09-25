@@ -3,11 +3,13 @@
 ### Imports ###
 import numpy as np
 import sys
+import os
 import copy
 from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
 import matplotlib.colors
+import matplotlib.lines as mlines
 import matplotlib.dates as mdates
 import matplotlib.gridspec as gridspec
 import operator
@@ -18,6 +20,7 @@ sys.path.insert(0, '/home/mike/Dropbox/0_grad_work/mission_tools')
 import plot_emfisis_spectrogram
 import plot_mageis_spectra
 import psd_fit
+import resonant_diffusion_curves
 
 ### Constants of nature ###
 c = 3E10 # cm/s
@@ -28,34 +31,26 @@ m_e = 9.1E-31 # kg
 q_e = -1.6E-19 # C
 Erest = 511 # keV
 
-# Define relativistic $\beta$ and $\gamma$, functions of kinetic energy for electrons
-beta = lambda Ek: np.sqrt(1-(Ek/511+1)**(-2))
-gamma = lambda Ek:np.sqrt(1-beta(Ek)**2)**(-1/2)
+#### Define relativistic $\beta$ and $\gamma$, functions of kinetic energy for electrons
+###beta = lambda Ek: np.sqrt(1-(Ek/511+1)**(-2))
+###gamma = lambda Ek:np.sqrt(1-beta(Ek)**2)**(-1/2)
 
-# Define the dipole magnetic field
-B0 = 31.2E-6 # Tesla from Schultz and Lanzerotti, MagB is from Eq. 1.23
-magB = lambda λ, L: (B0/L**3)*np.sqrt(1 + 3*np.power(np.sin(np.deg2rad(λ)), 2))/np.cos(np.deg2rad(λ))**6
+#### Define the dipole magnetic field
+###B0 = 31.2E-6 # Tesla from Schultz and Lanzerotti, MagB is from Eq. 1.23
+###magB = lambda λ, L: (B0/L**3)*np.sqrt(1 + 3*np.power(np.sin(np.deg2rad(λ)), 2))/np.cos(np.deg2rad(λ))**6
 
-# Frequency, magnitude of k, and number density definitions
-wce = lambda λ, L: np.abs(q_e)*magB(λ, L)/m_e
-n_e = lambda n0, λ = None: n0 # Electron number density. Currently constant, but can assume a complex function.
-wpe = lambda n0, λ = None: np.sqrt(4*np.pi*n_e(n0, λ)*q_e**2/(m_e*eps0))
-magk = lambda w, n0, λ, L: (w/c)*np.sqrt(1 - wpe(n0, λ)**2/(w*(w - wce(λ, L))))
+#### Frequency, magnitude of k, and number density definitions
+###wce = lambda λ, L: np.abs(q_e)*magB(λ, L)/m_e
+###n_e = lambda n0, λ = None: n0 # Electron number density. Currently constant, but can assume a complex function.
+###wpe = lambda n0, λ = None: np.sqrt(4*np.pi*n_e(n0, λ)*q_e**2/(m_e*eps0))
+###magk = lambda w, n0, λ, L: (w/c)*np.sqrt(1 - wpe(n0, λ)**2/(w*(w - wce(λ, L))))
 
-# Define the resonance curve
-def resCurveVperp(vParallel, w, n0, λ, L, n = 1):
-    """
-    This function defines the perpendicular velocity of a resonant particle with n = 1
-    """
-    A = -(c*(w + magk(w, n0, λ, L)*vParallel)/(wce(λ, L)*n))**2
-    return np.sqrt(A + c**2 - vParallel**2)
-
-# Define Alfven speed, alpha parameter from Summers 1998 paper, and phase velocity.
-# omega must be normalized to the elctron gyrofrequency, and the B field in 
-# units of nT and electron number density, n in #/cc
-v_a = lambda B, n: 1e-9*B/np.sqrt((1e6)*mu_0*n*m_p)
-summersAlpha = lambda B, n: (m_p/m_e)*(v_a(B, n)/(c/1e2))**2
-u_ph = lambda omega, B, n: np.sqrt(summersAlpha(B, n)*omega*(1 - omega))
+#### Define Alfven speed, alpha parameter from Summers 1998 paper, and phase velocity.
+#### omega must be normalized to the elctron gyrofrequency, and the B field in 
+#### units of nT and electron number density, n in #/cc
+###v_a = lambda B, n: 1e-9*B/np.sqrt((1e6)*mu_0*n*m_p)
+###summersAlpha = lambda B, n: (m_p/m_e)*(v_a(B, n)/(c/1e2))**2
+###u_ph = lambda omega, B, n: np.sqrt(summersAlpha(B, n)*omega*(1 - omega))
 
 class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritance
     def __init__(self, rb_id, tRange, instrument, **kwargs):
@@ -408,10 +403,10 @@ if __name__ == '__main__':
     psdObj.binPsdAlpha(alphaBins, psdErr = psdObj.psdErr)
     plotPitchAngles = False
     plotMeredithPlot = True
-    saveMeredithPlt = True
+    saveMeredithPlt = False
     drawDiffusionCurves = False
-    drawResonanceCurves = False
-    drawEqualE = False
+    drawResonanceCurves = True
+    drawEqualE = True
     vmin = 1E-4
     vmax = 1E-140*7
     
@@ -479,11 +474,7 @@ if __name__ == '__main__':
     # Put ticks on seconds, and rotate them.
     plt.setp(alphaPlt.xaxis.get_majorticklabels(), rotation=30, ha='right')
 
-    for i in range(7):
-        # Plot energy contours in momenum space.
-        if drawEqualE:
-            polarPsdPlt.plot(p_e_perp[i], p_e_parallel[i], 'w--')
-            
+    for i in range(7):        
         # Draw diffusion curves
         if drawDiffusionCurves and i % 2 == 0:
             v_perpFlt, v_parallelFlt = psdObj.calcDiffusionCurveConstantUWrapper(
@@ -500,7 +491,8 @@ if __name__ == '__main__':
     # Draw extrapolated PSD.
     if extPSD:
         # Load the fit parameters and bin the psd to the pitch angle bins
-        popt = np.load('../data/quiet_fit_popt.npy')
+        dir_path = os.path.dirname(os.path.realpath(__file__)) # Script dir
+        popt = np.load(os.path.join(dir_path, 'data', 'quiet_fit_popt.npy'))
         extPsd = np.nan*np.ones((7, len(alphaBins)), dtype = float) 
         
         for e in range(7):
@@ -525,24 +517,51 @@ if __name__ == '__main__':
     ax, p = psdObj.drawPatches(alpha0Arr, ax = polarPsdPlt)
     cb = plt.colorbar(p, label = r'PSD $c^3/(cm \ MeV)^3$')    
     
-    
+
+    # Plot energy contours in momenum space.
+    if drawEqualE:
+        for i in range(7):
+            polarPsdPlt.plot(p_e_perp[i], p_e_parallel[i], 'w--')
+
     # Draw resonance curves
     if drawResonanceCurves:
-        
-        v_perp_res = resCurveVperp(c*v_parallel, wce(λ, L)*0.1, 1E6*n, λ, L, 
-            n = harmonic)/c
-#        polarPsdPlt.plot(v_perp_res, v_parallel, 'k--', 
-#            v_perp_res, -v_parallel, 'k--', 
-#            label = r'$\omega = 0.4$ resonance curve')
-        polarPsdPlt.plot(v_perp_res, v_parallel, 'k--')
-        polarPsdPlt.plot(v_perp_res, -v_parallel, 'k--', 
-            label = r'$\omega = 0.1$ resonance curve')
-        v_perp_res = resCurveVperp(c*v_parallel, wce(λ, L)*0.4, 1E6*n, λ, L, 
-            n = harmonic)/c
-        polarPsdPlt.plot(v_perp_res, v_parallel, 'k:')
-        polarPsdPlt.plot(v_perp_res, -v_parallel, 'k:', 
-            label = r'$\omega = 0.4$ resonance curve')
-        polarPsdPlt.legend(loc = 4)
+        vParallel_res = c/100*np.linspace(0, -0.99, num = 1000)
+        mlat = 0
+        L = 5.7
+        n0 = 0.5E6 # Density at the time
+
+        # w/w_ce = 0.1 
+        vPerp_res = resonant_diffusion_curves.resCurveVperp(
+            vParallel_res, 0.1*resonant_diffusion_curves.wce(mlat, L), n0, mlat, L)
+        pPerp_res, pParallel_res = resonant_diffusion_curves.p(
+            vPerp_res, vParallel_res)
+        polarPsdPlt.plot(pPerp_res, pParallel_res, 'g')
+        polarPsdPlt.plot(pPerp_res, -pParallel_res, 'g')
+        label01 = mlines.Line2D([], [], color='g', markersize=15, 
+            label=r'$0.1 \ \Omega_{ce}$')
+
+        # w/w_ce = 0.4 
+        vPerp_res = resonant_diffusion_curves.resCurveVperp(
+            vParallel_res, 0.4*resonant_diffusion_curves.wce(mlat, L), n0, mlat, L)
+        pPerp_res, pParallel_res = resonant_diffusion_curves.p(
+            vPerp_res, vParallel_res)
+        polarPsdPlt.plot(pPerp_res, pParallel_res, 'r')
+        polarPsdPlt.plot(pPerp_res, -pParallel_res, 'r')
+        label04 = mlines.Line2D([], [], color='r', markersize=15, ls='-',
+            label=r'$0.4 \ \Omega_{ce}$')
+
+        # w/w_ce = 0.6
+        vPerp_res = resonant_diffusion_curves.resCurveVperp(
+            vParallel_res, 0.6*resonant_diffusion_curves.wce(mlat, L), n0, mlat, L)
+        pPerp_res, pParallel_res = resonant_diffusion_curves.p(
+            vPerp_res, vParallel_res)
+        polarPsdPlt.plot(pPerp_res, pParallel_res, 'b')
+        polarPsdPlt.plot(pPerp_res, -pParallel_res, 'b')
+        label06 = mlines.Line2D([], [], color='b', markersize=15, ls='-',
+            label=r'$0.6 \ \Omega_{ce}$')
+
+
+        polarPsdPlt.legend(loc=4, handles=[label01, label04, label06], fontsize=10)
         
     polarPsdPlt.set(xlabel = r'$p_{\perp}/m_e c$', 
         ylabel = r'$p_{\parallel}/m_e c$')
@@ -556,7 +575,7 @@ if __name__ == '__main__':
 #    ax.set(title = 'Phase space density from RBSP-{} \n Spin at {}'.format(rb_id, psdObj.magEISdata['Epoch'][0].isoformat()),
 #    xlabel = r'$p_{\perp}/m_e c$', ylabel = r'$p_{\parallel}/m_e c$')
 #    ax.set_xlim(right = ax.get_ylim()[1])
-    #polarPsdPlt.set_aspect('equal')
+    polarPsdPlt.set_aspect('equal')
     polarPsdPlt.set(ylim = (-1.2, 1.2), xlim = (0, 1.2))
     gs.tight_layout(fig, rect=[0, 0.03, 1, 0.95])
     

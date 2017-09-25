@@ -70,10 +70,10 @@ if __name__ == '__main__':
     # relativistic energies by whistler mode chorus. Annales
     # Geophysicae, European Geosciences Union, 2002, 20 (7), pp.967-979.
 
-    vParallel = c*np.linspace(0, -0.99, num = 100)
+    vParallel = c*np.linspace(0, -0.99, num = 100) # m/s
     mlat = 0
-    L = 4
-    n0 = 60.5E6 # Density at the time
+    L = 5.7 #4
+    n0 = 0.5E6 #60.5E6 # Density (# m^-3)
 
     # Calculate and plot resutls
     vPerp = resCurveVperp(vParallel, 0.1*wce(mlat, L), n0, mlat, L)
@@ -94,4 +94,16 @@ if __name__ == '__main__':
     plt.ylabel(r'$p_{||}/m_e c$')
     plt.title(r'Resonance Curves for $\omega_{pe} / \omega_{ce} = $' + str(round(wpe(n0, mlat)/wce(mlat, L), 2)))
     plt.legend()
+    plt.show()
+
+    vParallel_res = c*np.linspace(0, -0.99, num = 1000)
+    mlat = 0
+    L = 5.7
+    n0 = 0.5E6 # Density at the time
+
+    vPerp_res = resCurveVperp(
+        vParallel_res, 0.1*wce(mlat, L), n0, mlat, L)
+    pPerp_res, pParallel_res = p(vPerp_res, vParallel_res)
+    print(pPerp_res, pParallel_res)
+    plt.plot(pPerp_res, -pParallel_res, 'k--', label=r'$0.9 \ \Omega_{ce}$')
     plt.show()
