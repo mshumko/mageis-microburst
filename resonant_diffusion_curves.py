@@ -96,18 +96,6 @@ def diffCurveVperp(v_parallel, w, n0, mlat, L, E):
     vPerp = np.sqrt(numerator/denomimator)
     return c*vPerp
 
-###def calcDiffusionCurveConstantUWrapper(self, v_parallel, E, B, n, omega):
-###    """
-###    Energy must be in keV!
-###    """
-###    u = u_ph(omega, B, n)
-###    v_0 = beta(E)
-###    v_perp = self.calcDiffusionCurveConstantU(v_parallel,  u, v_0)
-###    
-###    #filter out the nan's
-###    validV = np.where(np.logical_not(np.isnan(v_perp)))[0]
-###    return v_perp[validV], v_parallel[validV]
-
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     print('Recreating resonance curves from Figure 6 in Meredith et al 2002.')

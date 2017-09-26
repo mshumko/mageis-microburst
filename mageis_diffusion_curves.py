@@ -131,8 +131,6 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
             self.tRange[1] + timedelta(minutes = 2)]
         
         self.loadMagEIS(instrument = self.instrument, highrate = True)
-
-
         
         # Calculate the flattened time and pitch angle arrays.
         self.resolveSpinTimes(flattenTime = True)
@@ -184,38 +182,38 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
         self.psdErr = psd[:, 1, :]
         return self.psd, self.psdErr
 
-    def calcDiffusionCurveConstantU(self, v_p,  u_0, v_0):
-        """
-        This function returns the perpendicular velocity from the diffusion
-        equation given in Eq. 6 in Summers et al. 1998. 
+###    def calcDiffusionCurveConstantU(self, v_p,  u_0, v_0):
+###        """
+###        This function returns the perpendicular velocity from the diffusion
+###        equation given in Eq. 6 in Summers et al. 1998. 
 
-        Input velocity units must be divided by c!
+###        Input velocity units must be divided by c!
 
-        THIS FUNCTION ASSUMES THAT THE WAVE PHASE VELOCITY IS CONSTANT!
-        """
-        numerator = ( -(1 - (u_0*v_0)**2)*v_p**2 + 
-            2*u_0*(1 - v_0**2)*v_p + v_0**2 + u_0**2)
-        denomimator = 1 - u_0**2
-        return np.sqrt(numerator/denomimator)
+###        THIS FUNCTION ASSUMES THAT THE WAVE PHASE VELOCITY IS CONSTANT!
+###        """
+###        numerator = ( -(1 - (u_0*v_0)**2)*v_p**2 + 
+###            2*u_0*(1 - v_0**2)*v_p + v_0**2 + u_0**2)
+###        denomimator = 1 - u_0**2
+###        return np.sqrt(numerator/denomimator)
 
-    def calcDiffusionCurveConstantUWrapper(self, v_parallel, E, B, n, omega):
-        """
-        Energy must be in keV!
-        """
-        u = u_ph(omega, B, n)
-        v_0 = beta(E)
-        v_perp = self.calcDiffusionCurveConstantU(v_parallel,  u, v_0)
-        
-        #filter out the nan's
-        validV = np.where(np.logical_not(np.isnan(v_perp)))[0]
-        return v_perp[validV], v_parallel[validV]
+###    def calcDiffusionCurveConstantUWrapper(self, v_parallel, E, B, n, omega):
+###        """
+###        Energy must be in keV!
+###        """
+###        u = u_ph(omega, B, n)
+###        v_0 = beta(E)
+###        v_perp = self.calcDiffusionCurveConstantU(v_parallel,  u, v_0)
+###        
+###        #filter out the nan's
+###        validV = np.where(np.logical_not(np.isnan(v_perp)))[0]
+###        return v_perp[validV], v_parallel[validV]
 
-    def calcResonanceCurves(self, ):
-        """
-        
-        """
+###    def calcResonanceCurves(self, ):
+###        """
+###        
+###        """
 
-        return
+###        return
         
     def binPsdAlpha(self, binEdges, psdErr = None, zeroPsdFill = 0, 
             remapAlpha = True):
@@ -404,9 +402,9 @@ if __name__ == '__main__':
     plotPitchAngles = False
     plotMeredithPlot = True
     saveMeredithPlt = False
-    drawDiffusionCurves = False
+    drawDiffusionCurves = True
     drawResonanceCurves = True
-    drawEqualE = True
+    drawEqualE = False
     vmin = 1E-4
     vmax = 1E-140*7
     
@@ -440,15 +438,6 @@ if __name__ == '__main__':
     p_e_perp = np.array([psdObj.p_perp(psdObj.Emid[i], np.linspace(1, 180)) for i in range(7)])
     p_e_parallel = np.array([psdObj.p_parallel(psdObj.Emid[i], np.linspace(1, 180)) for i in range(7)])
 
-    # Define diffusion and resonance curve parameters
-    #B = 180 # nT, at scattering location
-    n = 1 # electrons/cm^3
-    omega = 0.1 # Normalized chorus gyrofrequency
-    v_parallel = np.linspace(0, 1)
-    harmonic = 1
-    λ = 10
-    L = 6
-
     ###### PLOTS ######
 
     if plotMeredithPlot:
@@ -472,21 +461,7 @@ if __name__ == '__main__':
     psdPlt.axes.get_xaxis().set_visible(False)
 
     # Put ticks on seconds, and rotate them.
-    plt.setp(alphaPlt.xaxis.get_majorticklabels(), rotation=30, ha='right')
-
-    for i in range(7):        
-        # Draw diffusion curves
-        if drawDiffusionCurves and i % 2 == 0:
-            v_perpFlt, v_parallelFlt = psdObj.calcDiffusionCurveConstantUWrapper(
-                v_parallel, psdObj.Emid[i], magB(λ, L)*1E9, n, omega)
-            polarPsdPlt.plot(v_perpFlt, v_parallelFlt, 'w-')
-            polarPsdPlt.plot(v_perpFlt, -v_parallelFlt, 'w-')
-            paramStr = ('L = {}\nmlat = {}\n|B| = {} nT \nomega = {}'
-                ' \nn = {} cm^-3'.format(
-                L, λ, round(magB(λ, L)*1E9), omega, n))
-            polarPsdPlt.text(0.6, 0.8, paramStr, color = 'w',
-                transform=polarPsdPlt.transAxes)    
-                
+    plt.setp(alphaPlt.xaxis.get_majorticklabels(), rotation=30, ha='right')  
                 
     # Draw extrapolated PSD.
     if extPSD:
@@ -523,13 +498,14 @@ if __name__ == '__main__':
         for i in range(7):
             polarPsdPlt.plot(p_e_perp[i], p_e_parallel[i], 'w--')
 
+    # Resonant-diffusion parameters
+    vParallel_res = c/100*np.linspace(0, -0.99, num = 1000)
+    mlat = 0
+    L = 5.7
+    n0 = 0.5E6 # Density at the time
+
     # Draw resonance curves
     if drawResonanceCurves:
-        vParallel_res = c/100*np.linspace(0, -0.99, num = 1000)
-        mlat = 0
-        L = 5.7
-        n0 = 0.5E6 # Density at the time
-
         # w/w_ce = 0.1 
         vPerp_res = resonant_diffusion_curves.resCurveVperp(
             vParallel_res, 0.1*resonant_diffusion_curves.wce(mlat, L), n0, mlat, L)
@@ -559,10 +535,22 @@ if __name__ == '__main__':
         polarPsdPlt.plot(pPerp_res, -pParallel_res, 'b')
         label06 = mlines.Line2D([], [], color='b', markersize=15, ls='-',
             label=r'$0.6 \ \Omega_{ce}$')
-
-
+            
         polarPsdPlt.legend(loc=4, handles=[label01, label04, label06], fontsize=10)
         
+    if drawDiffusionCurves:
+        Earr = psdObj.Emid
+        vParallel_diff = vParallel_res
+        
+        for e in Earr[::2]:
+            vPerp_diff = resonant_diffusion_curves.diffCurveVperp(
+                vParallel_diff, 0.4*resonant_diffusion_curves.wce(mlat, L), 
+                n0, mlat, L, e)
+            pPerp_diff, pParallel_diff = resonant_diffusion_curves.p(vPerp_diff, 
+                vParallel_diff)
+            polarPsdPlt.plot(pPerp_diff, pParallel_diff, 'c--')
+            polarPsdPlt.plot(pPerp_diff, -pParallel_diff, 'c--')
+            
     polarPsdPlt.set(xlabel = r'$p_{\perp}/m_e c$', 
         ylabel = r'$p_{\parallel}/m_e c$')
         
