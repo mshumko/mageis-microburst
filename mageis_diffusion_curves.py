@@ -23,34 +23,13 @@ import psd_fit
 import resonant_diffusion_curves
 
 ### Constants of nature ###
-c = 3E10 # cm/s
+c = 3E8 # m/s
 mu_0 = 1.26E-6 # H·m−1 or N·A−2
 eps0 = 8.85E-12 # F/m
 m_p = 1.7E-27 # kg
 m_e = 9.1E-31 # kg
 q_e = -1.6E-19 # C
 Erest = 511 # keV
-
-#### Define relativistic $\beta$ and $\gamma$, functions of kinetic energy for electrons
-###beta = lambda Ek: np.sqrt(1-(Ek/511+1)**(-2))
-###gamma = lambda Ek:np.sqrt(1-beta(Ek)**2)**(-1/2)
-
-#### Define the dipole magnetic field
-###B0 = 31.2E-6 # Tesla from Schultz and Lanzerotti, MagB is from Eq. 1.23
-###magB = lambda λ, L: (B0/L**3)*np.sqrt(1 + 3*np.power(np.sin(np.deg2rad(λ)), 2))/np.cos(np.deg2rad(λ))**6
-
-#### Frequency, magnitude of k, and number density definitions
-###wce = lambda λ, L: np.abs(q_e)*magB(λ, L)/m_e
-###n_e = lambda n0, λ = None: n0 # Electron number density. Currently constant, but can assume a complex function.
-###wpe = lambda n0, λ = None: np.sqrt(4*np.pi*n_e(n0, λ)*q_e**2/(m_e*eps0))
-###magk = lambda w, n0, λ, L: (w/c)*np.sqrt(1 - wpe(n0, λ)**2/(w*(w - wce(λ, L))))
-
-#### Define Alfven speed, alpha parameter from Summers 1998 paper, and phase velocity.
-#### omega must be normalized to the elctron gyrofrequency, and the B field in 
-#### units of nT and electron number density, n in #/cc
-###v_a = lambda B, n: 1e-9*B/np.sqrt((1e6)*mu_0*n*m_p)
-###summersAlpha = lambda B, n: (m_p/m_e)*(v_a(B, n)/(c/1e2))**2
-###u_ph = lambda omega, B, n: np.sqrt(summersAlpha(B, n)*omega*(1 - omega))
 
 class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritance
     def __init__(self, rb_id, tRange, instrument, **kwargs):
@@ -105,7 +84,6 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
         dataLevel = kwargs.get('dataLevel', 3)
         super().__init__(rb_id, self.tRange[0], dataLevel = dataLevel)
         self.tBounds = self.tRange
-        
         return
                 
     def loadData(self, dataLevel = 3):
@@ -182,39 +160,6 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
         self.psdErr = psd[:, 1, :]
         return self.psd, self.psdErr
 
-###    def calcDiffusionCurveConstantU(self, v_p,  u_0, v_0):
-###        """
-###        This function returns the perpendicular velocity from the diffusion
-###        equation given in Eq. 6 in Summers et al. 1998. 
-
-###        Input velocity units must be divided by c!
-
-###        THIS FUNCTION ASSUMES THAT THE WAVE PHASE VELOCITY IS CONSTANT!
-###        """
-###        numerator = ( -(1 - (u_0*v_0)**2)*v_p**2 + 
-###            2*u_0*(1 - v_0**2)*v_p + v_0**2 + u_0**2)
-###        denomimator = 1 - u_0**2
-###        return np.sqrt(numerator/denomimator)
-
-###    def calcDiffusionCurveConstantUWrapper(self, v_parallel, E, B, n, omega):
-###        """
-###        Energy must be in keV!
-###        """
-###        u = u_ph(omega, B, n)
-###        v_0 = beta(E)
-###        v_perp = self.calcDiffusionCurveConstantU(v_parallel,  u, v_0)
-###        
-###        #filter out the nan's
-###        validV = np.where(np.logical_not(np.isnan(v_perp)))[0]
-###        return v_perp[validV], v_parallel[validV]
-
-###    def calcResonanceCurves(self, ):
-###        """
-###        
-###        """
-
-###        return
-        
     def binPsdAlpha(self, binEdges, psdErr = None, zeroPsdFill = 0, 
             remapAlpha = True):
         """
@@ -252,8 +197,6 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
             if psdErr is not None:
                 self.meanPsdErr[:, a] = np.sqrt(np.sum(
                     psdErr[:, validAlpha]**2, axis = 1))/len(validAlpha)
-                #np.mean(self.psd[:, validAlpha], axis = 1)
-        
         return self.alphaBinMid, self.meanPsd
         
         
@@ -270,14 +213,12 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
             patches.append(Polygon(self.verticies[:, :, i]))
 
         p = matplotlib.collections.PatchCollection(patches)
-#        p.set_cmap('rainbow')
         p.set_cmap('plasma')
         p.set_array(np.array(c))
         p.autoscale()
         p.set_norm(matplotlib.colors.LogNorm())
         p.set_clim(vmin=10**-4, vmax=10**-1)
         ax.add_collection(p)
-        #fig.colorbar(p, ax=ax)
         return ax, p
         
     def __makePatchVerticies__(self, eqPitchAngleBins, energyBins = None,
@@ -331,11 +272,11 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
     # Drew's derivation of the phase space density
     @staticmethod
     def f(j, Ek, Erest = Erest, jErr = None):
-        psd = np.divide(j, c*Ek*(Ek + 2*Erest))
+        psd = np.divide(j, 100*c*Ek*(Ek + 2*Erest))
         if jErr is None:
             return psd
         else:
-            psdErr = np.divide(jErr, c*Ek*(Ek + 2*Erest))
+            psdErr = np.divide(jErr, 100*c*Ek*(Ek + 2*Erest))
             return psd, psdErr
 
     # Calculate the electron flux for a given energy channel.
@@ -355,7 +296,7 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
             )*np.sign(alpha0)/Erest
 
     # Relativistic momentum from the kinetic energy output units of keV*s/m
-    p = staticmethod(lambda T, Erest = Erest: np.sqrt(T**2 + 2*T*Erest)/c)
+    p = staticmethod(lambda T, Erest = Erest: np.sqrt(T**2 + 2*T*Erest)/(100*c))
 
     @staticmethod
     def alpha0(*args):
@@ -375,6 +316,7 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
         ida = np.where(args[-1] > 90)[0]
         a0[ida] = np.pi - a0[ida] #(-a0[ida] % np.pi/2) 
         return np.rad2deg(a0)
+
 
 if __name__ == '__main__':
     tBoundsDict = {'q':[datetime(2017, 3, 31, 11, 15, 0), datetime(2017, 3, 31, 11, 17, 0)], 'm1':[datetime(2017, 3, 31, 11, 17, 0), datetime(2017, 3, 31, 11, 17, 20)], 'm2':[datetime(2017, 3, 31, 11, 17, 10), datetime(2017, 3, 31, 11, 17, 20)],
@@ -499,7 +441,7 @@ if __name__ == '__main__':
             polarPsdPlt.plot(p_e_perp[i], p_e_parallel[i], 'w--')
 
     # Resonant-diffusion parameters
-    vParallel_res = c/100*np.linspace(0, -0.99, num = 1000)
+    vParallel_res = c*np.linspace(0, -0.99, num = 1000)
     mlat = 0
     L = 5.7
     n0 = 0.5E6 # Density at the time
