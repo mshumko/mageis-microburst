@@ -18,6 +18,7 @@ def sinAlpha(alpha, A, n):
 if __name__ == '__main__':
     key = 'quiet2'
     saveFits = False
+    n = 0.5
 
     annotate_plot = True
     # A dictionary of times to analyze
@@ -60,29 +61,21 @@ if __name__ == '__main__':
 
     # Map the local pitch angle to the magnetic equator.
     alpha0Arr = psdObj.alpha0(psdObj.BeqOverB, alphaBins)
+    
+    # Find the locations where there is a discontinuity in the equatorial 
+    # pitch angles.
+    dA = np.convolve([1, -1], alpha0Arr, mode='same')
+    jumpIda = np.where(dA > 2*np.mean(dA))[0][0]
+    jumpAlphas = np.arange(alpha0Arr[jumpIda-1], alpha0Arr[jumpIda])
+    A = np.nan*np.ones(7)
+    
+    for E in range(7): 
+        meanJumpPSD = (psdObj.meanPsd[E, jumpIda-1] + psdObj.meanPsd[E, jumpIda])/2
+        A[E] = meanJumpPSD/(np.sin(np.deg2rad(alpha0Arr[jumpIda-1])))**n
 
     # Filter the psd by valid pitch angles.
     ida = np.where(psdObj.meanPsd[0] != 0)[0]
 
-    popt = np.nan*np.ones((psdObj.meanPsd.shape[0], 2), dtype = float)
-    perr = np.nan*np.ones((psdObj.meanPsd.shape[0], 2), dtype = float)
-
-    # Do the least squares fitting.
-    for i in range(psdObj.meanPsd.shape[0]):
-        popt[i, :], pcov = scipy.optimize.curve_fit(sinAlpha, alpha0Arr[ida], 
-                    psdObj.meanPsd[i, ida], p0 = p0Dict[key], 
-                    sigma = psdObj.meanPsdErr[i, ida], 
-                    absolute_sigma = False)
-        perr[i, :] = np.sqrt(np.diag(pcov))
-
-    if saveFits:
-    # save the fit parameters and errors.
-        np.save('/home/mike/research/mageis-microburst/data/'
-            'psd_fit_popt_{}_{}'.format(
-            tBounds[0].strftime('%H%M%S'), tBounds[1].strftime('%H%M%S')), popt)
-        np.save('/home/mike/research/mageis-microburst/data/'
-            'psd_fit_perr_{}_{}'.format(
-            tBounds[0].strftime('%H%M%S'), tBounds[1].strftime('%H%M%S')), perr)
 
     fitAlphaArr = np.arange(180)
     ### PLOTTING ###
@@ -94,23 +87,22 @@ if __name__ == '__main__':
         psdPlt.errorbar(alpha0Arr[ida], psdObj.meanPsd[i, ida], 
             label = '{} keV'.format(psdObj.Emid[i]), ls = 'None', marker = 'o',
             yerr = psdObj.meanPsdErr[i, ida])
-        psdPlt.plot(fitAlphaArr, sinAlpha(fitAlphaArr, popt[i, 0], popt[i, 1]))
+        psdPlt.plot(jumpAlphas, A[i]*np.sin(np.deg2rad(jumpAlphas))**n)
     
-
-        # Add fit patameters to plot
-        if annotate_plot:
-            fit_txt = 'A = {:.2e}, n = {:.2f}'.format(popt[i, 0], popt[i, 1])
-            psdPlt.text(10, popt[i, 0], fit_txt)#, transform=psdPlt.transAxes)
-        
     psdPlt.set(yscale = 'log', xlabel = r'$\alpha_{eq}$', 
         ylabel = r'PSD $c^3/(cm \ MeV)^3$', xlim = (0, 180))
 
     psdPlt.set_title('RBSP-{} phase space density for {} \n {} - {} UT'.format(rb_id, 
             tBounds[0].date(), tBounds[0].strftime("%H:%M:%S"), 
             tBounds[1].strftime("%H:%M:%S")))
-    psdPlt.legend()
-    plt.savefig('/home/mike/research/mageis-microburst/data/'
-        'psd_fit_{}_{}.png'.format(
-        tBounds[0].strftime('%H%M%S'), tBounds[1].strftime('%H%M%S')))
+    #psdPlt.legend(loc=1, fontsize=10)
+    psdPlt.legend(bbox_to_anchor=(0., 0.05, 1., .102), loc=3,
+           ncol=7, mode="expand", borderaxespad=0.)
+    psdPlt.text(0.1, 0.95, 'n = {}'.format(n), transform=psdPlt.transAxes,
+        fontsize=20)
+
+#    plt.savefig('/home/mike/research/mageis-microburst/data/'
+#        'psd_fit_{}_{}_fidged.png'.format(
+#        tBounds[0].strftime('%H%M%S'), tBounds[1].strftime('%H%M%S')))
     plt.show()
         

@@ -123,10 +123,14 @@ if __name__ == '__main__':
     ### TOP LEVEL USER INPUT ###
     zoomedT = False
     plotBurst = False
-    savePlot = True
-    tKey = 'muBurst'
-    times = {'muBurst':[datetime(2017, 3, 31, 11, 15, 0), datetime(2017, 3, 31, 11, 18, 10)],
-            'later':[datetime(2017, 3, 31, 11, 35, 0), datetime(2017, 3, 31, 11, 38)]}
+    savePlot = False
+    tKey = 'all'
+    times = {'muBurst':[datetime(2017, 3, 31, 11, 15, 0), datetime(
+                        2017, 3, 31, 11, 18, 10)],
+            'later':[datetime(2017, 3, 31, 11, 35, 0), datetime(
+                        2017, 3, 31, 11, 38)],
+            'all':[datetime(2017, 3, 31, 11, 15), datetime(
+                        2017, 3, 31, 11, 20)]}
 
     # Figure 1 time range
     tRange = times[tKey]
