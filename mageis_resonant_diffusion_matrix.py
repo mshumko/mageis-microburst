@@ -17,7 +17,11 @@ c = 3E8 # m/s
 tBounds = [datetime(2017, 3, 31, 11, 17, 1), datetime(2017, 3, 31, 11, 17, 12)]
 rb_id = 'A'
 instrument = 'LOW'
-alphaBins = np.arange(0, 181, 5)
+mlat0 = -20 # Degrees
+n0 = 0.5E6 # e-/cm^3
+a = 3
+dataAlphaBins = np.arange(0, 180, 5)
+extrapAlphaBins = np.arange(30, 150, 5)
 vmin = 10**-3
 vmax = 10**-1
 poptFnameDict = {'fit':'psd_fit_extrapolation_popt_111500_111700.npy',
@@ -29,19 +33,30 @@ poptFnameDict = {'fit':'psd_fit_extrapolation_popt_111500_111700.npy',
 psdObj = mageis_diffusion_curves.PhaseSpaceDensity(rb_id, tBounds, instrument)
 psdObj.loadData()
 psdObj.calcPsd()
-#alphaBins = alphaBins[np.where(alphaBins < 180)[0]]
-psdObj.binPsdAlpha(alphaBins, psdErr = psdObj.psdErr)
-alpha0Arr = psdObj.alpha0(psdObj.BeqOverB, alphaBins)
+psdObj.binPsdAlpha(dataAlphaBins, psdErr = psdObj.psdErr)
+alpha0Arr = psdObj.alpha0(psdObj.BeqOverB, dataAlphaBins)
 
-# Get the extrapolated PSD, using the fit parameters.
+# Get the extrapolated PSD, using the fit parameters from files in the
+# poptFnameDict
 dir_path = os.path.dirname(os.path.realpath(__file__)) # Script dir
-popt_fit_extrap = np.load(os.path.join(dir_path, 'data',
-    'psd_fit_extrapolation_popt_111500_111700.npy'))
-extPsd = np.nan*np.ones((7, len(alphaBins)), dtype = float) 
+popDict = {}
+for key in poptFnameDict.keys():
+    popDict[key] = np.load(os.path.join(dir_path, 'data', poptFnameDict[key]))
+    
+extPsd = np.nan*np.ones((7, len(extrapAlphaBins), len(poptFnameDict.keys())),
+    dtype=float) 
 
-for e in range(7):
-    extPsd[e, :, 0] = psd_fit.sinAlpha(alphaBins, popt_fit_extrap[e, 0],
-        popt_fit_extrap[e, 1])
+# Sort the dictionary keys so that the first key is the fit, and then the 
+# extrapolations in ascending order
+dictKeys = sorted(poptFnameDict.keys())
+dictKeys.remove('fit')
+dictKeys.insert(0, 'fit')
+
+# Now save the extrapolated PSD values over the extrapolated pitch angles.
+for i_n, nKey in enumerate(dictKeys):
+    for e in range(7):
+        extPsd[e, :, i_n] = psd_fit.sinAlpha(extrapAlphaBins, popDict[nKey][e, 0],
+            popDict[nKey][e, 1])
 
 # Find the index where the alpha0Arr jumps (largest pitch angle sampled)
 ida = np.where(np.abs(np.convolve(alpha0Arr, [-1, 1])) > 10)[0][0]
@@ -58,9 +73,9 @@ s_parallel =  psdObj.p_parallel(np.linspace(0, psdObj.Ehigh[-1]),
 ### PLOTTING ###
 ################
 nRows = 2
-nCols = 3
+nCols = 4
 dCols = 10
-fig = plt.figure(figsize=(11, 12), dpi = 80, facecolor = 'white')
+fig = plt.figure(figsize=(12, 12), dpi = 80, facecolor = 'white')
 plt.rcParams.update({'font.size': 15})
 gs = gridspec.GridSpec(nRows, dCols*nCols+2)
 gs.update(wspace=0, hspace=0.01)
@@ -69,13 +84,13 @@ for (ir, ic), ax in np.ndenumerate(axArr):
     axArr[ir, ic] = fig.add_subplot(gs[ir, ic*dCols:(ic+1)*dCols], facecolor='k')
 colorAx = fig.add_subplot(gs[:, -2:], facecolor='k')
 
-nArr = np.array([[0.5E6, 0.5E6, 0.5E6], [5E6, 5E6, 5E6]])
-mlatArr = np.array([[0, 10, 20], [0, 10, 20], [0, 10, 20]])
-diffFraction = 0.1 # Fraction of the cyclotron frequency to draw the diffusion curves.
+mlatArr = np.array([[0, 0, 0, 0], [10, 10, 10, 10], [20, 20, 20, 20]])
+diffFraction = 0.4 # Fraction of the cyclotron frequency to draw the diffusion curves.
 
 for i, ax in np.ndenumerate(axArr):
     # Draw the extrapolarted patches
-    zzz, p = psdObj.drawPatches(alphaBins, ax=ax, psd=extPsd, vmin=vmin, vmax=vmax)
+    zzz, p = psdObj.drawPatches(extrapAlphaBins, ax=ax, psd=extPsd[:, :, i[1]], 
+        vmin=vmin, vmax=vmax)
     # Draw the edges of the data and extrapolation
     ax.plot(n_perp, n_parallel, 'w:')
     ax.plot(s_perp, s_parallel, 'w:') 
@@ -85,17 +100,15 @@ for i, ax in np.ndenumerate(axArr):
 
     # Resonant-diffusion parameters
     vParallel_res = c*np.linspace(0, -0.99, num = 1000)
-    #mlat = 0
     L = 5.7
-    #n0 = 0.5E6 # Density at the time
-
-    n = nArr[i]
+    n = 0.5E6
     mlat = mlatArr[i]
 
     # Draw resonance curves
     # w/w_ce = 0.1 
     vPerp_res = resonant_diffusion_curves.resCurveVperp(
-        vParallel_res, 0.1*resonant_diffusion_curves.wce(mlat, L), n, mlat, L)
+        vParallel_res, 0.1*resonant_diffusion_curves.wce(mlat, L), n0, mlat0, 
+        mlat, L, a=a)
     pPerp_res, pParallel_res = resonant_diffusion_curves.p(
         vPerp_res, vParallel_res)
     ax.plot(pPerp_res, pParallel_res, 'g')
@@ -105,7 +118,8 @@ for i, ax in np.ndenumerate(axArr):
 
     # w/w_ce = 0.4 
     vPerp_res = resonant_diffusion_curves.resCurveVperp(
-        vParallel_res, 0.4*resonant_diffusion_curves.wce(mlat, L), n, mlat, L)
+        vParallel_res, 0.4*resonant_diffusion_curves.wce(mlat, L), n0, mlat0,
+        mlat, L, a=a)
     pPerp_res, pParallel_res = resonant_diffusion_curves.p(
         vPerp_res, vParallel_res)
     ax.plot(pPerp_res, pParallel_res, 'r')
@@ -115,7 +129,8 @@ for i, ax in np.ndenumerate(axArr):
 
     # w/w_ce = 0.6
     vPerp_res = resonant_diffusion_curves.resCurveVperp(
-        vParallel_res, 0.6*resonant_diffusion_curves.wce(mlat, L), n, mlat, L)
+        vParallel_res, 0.6*resonant_diffusion_curves.wce(mlat, L), n0, 
+        mlat0, mlat, L, a=a)
     pPerp_res, pParallel_res = resonant_diffusion_curves.p(
         vPerp_res, vParallel_res)
     ax.plot(pPerp_res, pParallel_res, 'b')
@@ -131,28 +146,31 @@ for i, ax in np.ndenumerate(axArr):
     for e in Earr[::2]:
         vPerp_diff = resonant_diffusion_curves.diffCurveVperp(
             vParallel_diff, diffFraction*resonant_diffusion_curves.wce(mlat, L), 
-            n, mlat, L, e)
+            n0, mlat0, mlat, L, e, a=a)
         pPerp_diff, pParallel_diff = resonant_diffusion_curves.p(vPerp_diff, 
             vParallel_diff)
         ax.plot(pPerp_diff, pParallel_diff, 'c--')
         ax.plot(pPerp_diff, -pParallel_diff, 'c--')
             
-    ax.set(aspect = 'equal', ylim = (-1.2, 1.2), xlim = (0, 1.2))
+    ax.set(aspect='equal', ylim=(-1.2, 1.2), xlim=(0, 1.2))
         
-
-    paramsStr = r'$\lambda = ${}$^{{\circ}}$ $n = {} \ e^-/cm^{{3}}$'.format(
-        round(mlat), round(n/1E6, 2))
-    ax.text(0.5, 0.95, paramsStr, horizontalalignment='center', 
-        verticalalignment='center', transform=ax.transAxes, color = 'w', fontsize = 15)
+    mlat_str = r'$\lambda = {0}^{{\circ}} \ ({1} \ cm^{{-3}})$'.format(
+        round(mlat), round(resonant_diffusion_curves.n_e(
+            n0, mlat0, mlat, a=a)*1E-6, 2))
+    n_extrap = r'$n_{{extrap}} = {0}$'.format(dictKeys[i[1]])
+    n_e_str = r'$n_{{e}} = {0}$'.format(
+        round(resonant_diffusion_curves.n_e(n0, mlat0, mlat, a=a)*1E-6, 2))
+    ax.text(0.99, 0.9, mlat_str + '\n' + n_extrap, horizontalalignment='right', 
+        verticalalignment='center', transform=ax.transAxes, color='w', fontsize=13)
         
-# Turn off the subplot's ticklabels
-axShape = axArr.shape
-for ax in axArr[:, 1]:
-    ax.set_yticklabels([])
-for ax in axArr[:, -1]: # This is weird why it does not work with the loop above.
-    ax.set_yticklabels([])
-for ax in axArr[0, :]:
-    ax.set_xticklabels([])
+# Turn off the subplot's ticklabels   
+for ii, ax in np.ndenumerate(axArr):
+    if ii[1] == 0: # Can't figure out how to slide the array correctly...
+        continue
+    axArr[ii].set_yticklabels([])
+    
+for ii, ax in np.ndenumerate(axArr[:-1, :]):
+    axArr[ii].set_xticklabels([])
         
 fig.suptitle('RBSP-{} phase space density for {} \n {} - {} UT'.format(rb_id, 
     tBounds[0].date(), tBounds[0].strftime("%H:%M:%S"), 
