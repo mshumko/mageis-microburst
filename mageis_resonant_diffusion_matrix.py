@@ -13,11 +13,19 @@ import psd_fit
 # Constants of nature
 c = 3E8 # m/s
 
-# Load MagEIS data, calculate the PSD, and bin it to equatorial pitch angle.
-tBounds = [datetime(2017, 3, 31, 11, 17, 0), datetime(2017, 3, 31, 11, 17, 20)]
+# Script parameters
+tBounds = [datetime(2017, 3, 31, 11, 17, 1), datetime(2017, 3, 31, 11, 17, 12)]
 rb_id = 'A'
 instrument = 'LOW'
 alphaBins = np.arange(0, 181, 5)
+vmin = 10**-3
+vmax = 10**-1
+poptFnameDict = {'fit':'psd_fit_extrapolation_popt_111500_111700.npy',
+            '1':'psd_fit_fudged_n_1_popt_111500_111700.npy',
+            '2':'psd_fit_fudged_n_2_popt_111500_111700.npy',
+            '4':'psd_fit_fudged_n_4_popt_111500_111700.npy'}
+
+# Load MagEIS data, calculate the PSD, and bin it to equatorial pitch angle.
 psdObj = mageis_diffusion_curves.PhaseSpaceDensity(rb_id, tBounds, instrument)
 psdObj.loadData()
 psdObj.calcPsd()
@@ -27,11 +35,13 @@ alpha0Arr = psdObj.alpha0(psdObj.BeqOverB, alphaBins)
 
 # Get the extrapolated PSD, using the fit parameters.
 dir_path = os.path.dirname(os.path.realpath(__file__)) # Script dir
-popt = np.load(os.path.join(dir_path, 'data', 'quiet_fit_popt.npy'))
+popt_fit_extrap = np.load(os.path.join(dir_path, 'data',
+    'psd_fit_extrapolation_popt_111500_111700.npy'))
 extPsd = np.nan*np.ones((7, len(alphaBins)), dtype = float) 
 
 for e in range(7):
-    extPsd[e, :] = psd_fit.sinAlpha(alphaBins, popt[e, 0], popt[e, 1])
+    extPsd[e, :, 0] = psd_fit.sinAlpha(alphaBins, popt_fit_extrap[e, 0],
+        popt_fit_extrap[e, 1])
 
 # Find the index where the alpha0Arr jumps (largest pitch angle sampled)
 ida = np.where(np.abs(np.convolve(alpha0Arr, [-1, 1])) > 10)[0][0]
@@ -65,12 +75,12 @@ diffFraction = 0.1 # Fraction of the cyclotron frequency to draw the diffusion c
 
 for i, ax in np.ndenumerate(axArr):
     # Draw the extrapolarted patches
-    zzz, p = psdObj.drawPatches(alphaBins, ax = ax, psd = extPsd)
+    zzz, p = psdObj.drawPatches(alphaBins, ax=ax, psd=extPsd, vmin=vmin, vmax=vmax)
     # Draw the edges of the data and extrapolation
     ax.plot(n_perp, n_parallel, 'w:')
     ax.plot(s_perp, s_parallel, 'w:') 
     # Draw the PSD data.
-    ax, p = psdObj.drawPatches(alpha0Arr, ax = ax)
+    ax, p = psdObj.drawPatches(alpha0Arr, ax = ax, vmin=vmin, vmax=vmax)
     cb = plt.colorbar(p, label=r'PSD $c^3/(cm \ MeV)^3$', cax=colorAx) 
 
     # Resonant-diffusion parameters

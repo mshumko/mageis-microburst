@@ -17,10 +17,11 @@ def sinAlpha(alpha, A, n):
 
 if __name__ == '__main__':
     key = 'quiet2'
-    saveFits = False
-    n = 0.5
+    saveFits = True
+    n = 4
 
     annotate_plot = True
+    
     # A dictionary of times to analyze
     tBoundsDict = {
         'm1':[datetime(2017, 3, 31, 11, 17, 0), 
@@ -67,11 +68,12 @@ if __name__ == '__main__':
     dA = np.convolve([1, -1], alpha0Arr, mode='same')
     jumpIda = np.where(dA > 2*np.mean(dA))[0][0]
     jumpAlphas = np.arange(alpha0Arr[jumpIda-1], alpha0Arr[jumpIda])
-    A = np.nan*np.ones(7)
+    popt = np.nan*np.ones((7, 2))
     
     for E in range(7): 
         meanJumpPSD = (psdObj.meanPsd[E, jumpIda-1] + psdObj.meanPsd[E, jumpIda])/2
-        A[E] = meanJumpPSD/(np.sin(np.deg2rad(alpha0Arr[jumpIda-1])))**n
+        popt[E, 0] = meanJumpPSD/(np.sin(np.deg2rad(alpha0Arr[jumpIda-1])))**n
+        popt[E, 1] = n
 
     # Filter the psd by valid pitch angles.
     ida = np.where(psdObj.meanPsd[0] != 0)[0]
@@ -87,7 +89,7 @@ if __name__ == '__main__':
         psdPlt.errorbar(alpha0Arr[ida], psdObj.meanPsd[i, ida], 
             label = '{} keV'.format(psdObj.Emid[i]), ls = 'None', marker = 'o',
             yerr = psdObj.meanPsdErr[i, ida])
-        psdPlt.plot(jumpAlphas, A[i]*np.sin(np.deg2rad(jumpAlphas))**n)
+        psdPlt.plot(jumpAlphas, popt[i, 0]*np.sin(np.deg2rad(jumpAlphas))**n)
     
     psdPlt.set(yscale = 'log', xlabel = r'$\alpha_{eq}$', 
         ylabel = r'PSD $c^3/(cm \ MeV)^3$', xlim = (0, 180))
@@ -101,8 +103,9 @@ if __name__ == '__main__':
     psdPlt.text(0.1, 0.95, 'n = {}'.format(n), transform=psdPlt.transAxes,
         fontsize=20)
 
-#    plt.savefig('/home/mike/research/mageis-microburst/data/'
-#        'psd_fit_{}_{}_fidged.png'.format(
-#        tBounds[0].strftime('%H%M%S'), tBounds[1].strftime('%H%M%S')))
+    if saveFits:
+        np.save('/home/mike/research/mageis-microburst/data/'
+            'psd_fit_fudged_n_{}_popt_{}_{}'.format(n,
+            tBounds[0].strftime('%H%M%S'), tBounds[1].strftime('%H%M%S')), popt)
     plt.show()
         

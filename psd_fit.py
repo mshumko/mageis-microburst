@@ -17,7 +17,7 @@ def sinAlpha(alpha, A, n):
 
 if __name__ == '__main__':
     key = 'quiet2'
-    saveFits = False
+    saveFits = True
 
     annotate_plot = True
     # A dictionary of times to analyze
@@ -78,10 +78,10 @@ if __name__ == '__main__':
     if saveFits:
     # save the fit parameters and errors.
         np.save('/home/mike/research/mageis-microburst/data/'
-            'psd_fit_popt_{}_{}'.format(
+            'psd_fit_extrapolation_popt_{}_{}'.format(
             tBounds[0].strftime('%H%M%S'), tBounds[1].strftime('%H%M%S')), popt)
         np.save('/home/mike/research/mageis-microburst/data/'
-            'psd_fit_perr_{}_{}'.format(
+            'psd_fit_extrapolation_perr_{}_{}'.format(
             tBounds[0].strftime('%H%M%S'), tBounds[1].strftime('%H%M%S')), perr)
 
     fitAlphaArr = np.arange(180)

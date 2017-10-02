@@ -201,7 +201,7 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
         
         
     def drawPatches(self, eqPitchAngleBins, energyBins = None, ax = None, 
-            psd = None):
+            psd = None, vmin = 10**-4, vmax = 10**-1):
         # Create the verticies from the pitch angle bins.
         self.__makePatchVerticies__(eqPitchAngleBins, energyBins, psd = psd)   
         # Use lists here to filter out the pitch angle bins with no samples.   
@@ -217,7 +217,7 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
         p.set_array(np.array(c))
         p.autoscale()
         p.set_norm(matplotlib.colors.LogNorm())
-        p.set_clim(vmin=10**-4, vmax=10**-1)
+        p.set_clim(vmin=vmin, vmax=vmax)
         ax.add_collection(p)
         return ax, p
         
