@@ -19,7 +19,12 @@ rb_id = 'A'
 instrument = 'LOW'
 mlat0 = -20 # Degrees
 n0 = 0.5E6 # e-/cm^3
-a = 3
+L = 5.7
+a = -1 # Electron number density power law coefficient.
+mlats = [0, 20]
+# Fraction of the cyclotron frequency to draw the diffusion curves.
+diffFraction = 0.4 
+
 dataAlphaBins = np.arange(0, 180, 5)
 extrapAlphaBins = np.arange(30, 150, 5)
 vmin = 10**-3
@@ -75,19 +80,17 @@ s_parallel =  psdObj.p_parallel(np.linspace(0, psdObj.Ehigh[-1]),
 nRows = 2
 nCols = 4
 dCols = 10
-fig = plt.figure(figsize=(11, 10), dpi = 80, facecolor = 'white')
+fig = plt.figure(figsize=(10, 10), dpi = 80, facecolor = 'white')
 plt.rcParams.update({'font.size': 15})
 gs = gridspec.GridSpec(nRows, dCols*nCols+2)
-gs.update(wspace=0, hspace=0.01)
+#gs.update(wspace=0) #hspace=0.05
 axArr = np.nan*np.ones((nRows, nCols), dtype = object)
 for (ir, ic), ax in np.ndenumerate(axArr):
     axArr[ir, ic] = fig.add_subplot(gs[ir, ic*dCols:(ic+1)*dCols], facecolor='k')
 colorAx = fig.add_subplot(gs[:, -2:], facecolor='k')
 
-mlats = [0, 20]
 mlatArr = np.meshgrid(np.ones(nCols), mlats)[1]
 #mlatArr = np.array([[0, 0, 0, 0], [10, 10, 10, 10], [20, 20, 20, 20]])
-diffFraction = 0.4 # Fraction of the cyclotron frequency to draw the diffusion curves.
 
 for i, ax in np.ndenumerate(axArr):
     # Draw the extrapolarted patches
@@ -102,8 +105,7 @@ for i, ax in np.ndenumerate(axArr):
 
     # Resonant-diffusion parameters
     vParallel_res = c*np.linspace(0, -0.99, num = 1000)
-    L = 5.7
-    n = 0.5E6
+    #n = 0.5E6
     mlat = mlatArr[i]
 
     # Draw resonance curves
@@ -174,6 +176,9 @@ for ii, ax in np.ndenumerate(axArr):
 for ii, ax in np.ndenumerate(axArr[:-1, :]):
     axArr[ii].set_xticklabels([])
     
+for ax in axArr[-1, :]: # Throw on more x ticks.
+    ax.set_xticks([0, 0.5, 1])
+    
 ###for ii, ax in np.ndenumerate(axArr):
 ###    ax.set_xlim(0,0.5)
 ###    ax.set_ylim(0,0.5)
@@ -181,8 +186,11 @@ for ii, ax in np.ndenumerate(axArr[:-1, :]):
 fig.suptitle('RBSP-{} phase space density for {} \n {} - {} UT'.format(rb_id, 
     tBounds[0].date(), tBounds[0].strftime("%H:%M:%S"), 
     tBounds[1].strftime("%H:%M:%S")))
-fig.text(0.5, 0.02, r'$p_{\perp}/m_e c$', ha='center')
-fig.text(0.02, 0.5, r'$p_{\parallel}/m_e c$', va='center', rotation='vertical')
+fig.text(0.5, 0.05, r'$p_{\perp}/m_e c$', ha='center')
+fig.text(0.05, 0.5, r'$p_{\parallel}/m_e c$', va='center', rotation='vertical')
         
 #gs.tight_layout(fig, rect=[0.02, 0.03, 1, 0.95])
+plt.savefig('resonance_diffusion_matrix_{0}_{1}_n0_{2}_a_{3}_.png'.format(
+    tBounds[0].strftime("%H:%M:%S"), tBounds[1].strftime("%H:%M:%S"), n0*1E-6, a),
+    dpi=200)
 plt.show()
