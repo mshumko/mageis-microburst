@@ -75,7 +75,7 @@ s_parallel =  psdObj.p_parallel(np.linspace(0, psdObj.Ehigh[-1]),
 nRows = 2
 nCols = 4
 dCols = 10
-fig = plt.figure(figsize=(12, 12), dpi = 80, facecolor = 'white')
+fig = plt.figure(figsize=(11, 10), dpi = 80, facecolor = 'white')
 plt.rcParams.update({'font.size': 15})
 gs = gridspec.GridSpec(nRows, dCols*nCols+2)
 gs.update(wspace=0, hspace=0.01)
@@ -84,7 +84,9 @@ for (ir, ic), ax in np.ndenumerate(axArr):
     axArr[ir, ic] = fig.add_subplot(gs[ir, ic*dCols:(ic+1)*dCols], facecolor='k')
 colorAx = fig.add_subplot(gs[:, -2:], facecolor='k')
 
-mlatArr = np.array([[0, 0, 0, 0], [10, 10, 10, 10], [20, 20, 20, 20]])
+mlats = [0, 20]
+mlatArr = np.meshgrid(np.ones(nCols), mlats)[1]
+#mlatArr = np.array([[0, 0, 0, 0], [10, 10, 10, 10], [20, 20, 20, 20]])
 diffFraction = 0.4 # Fraction of the cyclotron frequency to draw the diffusion curves.
 
 for i, ax in np.ndenumerate(axArr):
@@ -171,6 +173,10 @@ for ii, ax in np.ndenumerate(axArr):
     
 for ii, ax in np.ndenumerate(axArr[:-1, :]):
     axArr[ii].set_xticklabels([])
+    
+###for ii, ax in np.ndenumerate(axArr):
+###    ax.set_xlim(0,0.5)
+###    ax.set_ylim(0,0.5)
         
 fig.suptitle('RBSP-{} phase space density for {} \n {} - {} UT'.format(rb_id, 
     tBounds[0].date(), tBounds[0].strftime("%H:%M:%S"), 
@@ -178,5 +184,5 @@ fig.suptitle('RBSP-{} phase space density for {} \n {} - {} UT'.format(rb_id,
 fig.text(0.5, 0.02, r'$p_{\perp}/m_e c$', ha='center')
 fig.text(0.02, 0.5, r'$p_{\parallel}/m_e c$', va='center', rotation='vertical')
         
-gs.tight_layout(fig, rect=[0.02, 0.03, 1, 0.95])
+#gs.tight_layout(fig, rect=[0.02, 0.03, 1, 0.95])
 plt.show()
