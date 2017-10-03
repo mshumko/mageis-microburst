@@ -241,11 +241,11 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
         """
         energyBins = kwargs.get('energyBins', None)
         ax = kwargs.get('ax', None)
-        psd = kwargs.get(psd, 'None')
-        vmin = kwargs.get(vmin, 10**-4)
-        vmax = kwargs.get(vmax, 10**-1)
-        cmap = kwargs.get(cmap, 'plasma')
-        cMapLog = kwargs.get(cMapLog, True)
+        psd = kwargs.get('psd', None)
+        vmin = kwargs.get('vmin', 10**-4)
+        vmax = kwargs.get('vmax', 10**-1)
+        cmap = kwargs.get('cmap', 'plasma')
+        cMapLog = kwargs.get('cMapLog', True)
         
         # Create the verticies from the pitch angle bins.
         self.__makePatchVerticies__(eqPitchAngleBins, energyBins, psd = psd)   
