@@ -163,11 +163,25 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
     def binPsdAlpha(self, binEdges, psdErr = None, zeroPsdFill = 0, 
             remapAlpha = True):
         """
-        This function will bin the phase space density using the alpha bin edges
-        array.
-        
-        remapAlpha kwarg will bin the pitch angles assuming the relevant angles
-        are from 0 to 180.
+        NAME:    binPsdAlpha(self, binEdges, psdErr = None, zeroPsdFill = 0, 
+                    remapAlpha = True)
+        USE:     This function will bin the phase space density using the 
+                 pitch angle binEdges.
+        INPUT:   REQUIRED:
+                    binEdges - Local pitch angle bins.
+                 OPTIONAL:
+                    remapAlpha = True: Fold the binEdges array and the observed
+                        pitch angles into 0-180 degrees.
+                    psdErr = None: <<< THIS MAY BE WRONG! >>> Phase space 
+                        density errors. Will claulcuate error due to Poisson
+                        statistics if None. 
+                    zeroPsdFill = 0: If no phase space density is found in the 
+                        bin, assign it a value of 0 instead of Nan.
+        AUTHOR:  Mykhaylo Shumko
+        RETURNS: self.alphaBinMid - Middle pitch angles from the binEdges,
+                 self.meanPsd - (nE, len(binEdges)-1) array where nE is the 
+                    number of energy channels.
+        MOD:     2017-10-03
         """
         if remapAlpha:
             # Fold binned and data alpha from 0 to 360 to 0 to 180.
@@ -200,8 +214,39 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
         return self.alphaBinMid, self.meanPsd
         
         
-    def drawPatches(self, eqPitchAngleBins, energyBins = None, ax = None, 
-            psd = None, vmin = 10**-4, vmax = 10**-1):
+    def drawPatches(self, eqPitchAngleBins, **kwargs):
+        """
+        NAME:    drawPatches(self, eqPitchAngleBins, **kwargs)
+        USE:     This function takes a set of pitch angle bins and plots
+                 patches in momentum space. The eqPitchAngleBins and 
+                 energyBins are used to create quadralateralls and plot them.
+        INPUT:   REQUIRED:
+                    eqPitchAngleBins - Equatorial pitch angle bins/
+                 OPTIONAL:
+                    energyBins = None - Energy bins. If None will use 
+                        self.Ebins
+                    ax = None: Subplot object
+                    psd = None: Phase space density for the bins. It None will
+                        use self.meanPsd.
+                    vmin = 10**-4: Sets the minimum value to display with the 
+                        colormap.
+                    vmax = 10**-1: Sets the maximum value to display with the 
+                        colormap.
+                    cmap = 'plasma': Sets the colormap for the patches.
+                    cMapLog = True: Sets the colorbar scale to log or linear 
+                        scale.
+        AUTHOR:  Mykhaylo Shumko
+        RETURNS: ax - subplot object, and p - patches objects.
+        MOD:     2017-10-03
+        """
+        energyBins = kwargs.get('energyBins', None)
+        ax = kwargs.get('ax', None)
+        psd = kwargs.get(psd, 'None')
+        vmin = kwargs.get(vmin, 10**-4)
+        vmax = kwargs.get(vmax, 10**-1)
+        cmap = kwargs.get(cmap, 'plasma')
+        cMapLog = kwargs.get(cMapLog, True)
+        
         # Create the verticies from the pitch angle bins.
         self.__makePatchVerticies__(eqPitchAngleBins, energyBins, psd = psd)   
         # Use lists here to filter out the pitch angle bins with no samples.   
@@ -213,10 +258,11 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
             patches.append(Polygon(self.verticies[:, :, i]))
 
         p = matplotlib.collections.PatchCollection(patches)
-        p.set_cmap('plasma')
+        p.set_cmap(cmap)
         p.set_array(np.array(c))
         p.autoscale()
-        p.set_norm(matplotlib.colors.LogNorm())
+        if cMapLog:
+            p.set_norm(matplotlib.colors.LogNorm())
         p.set_clim(vmin=vmin, vmax=vmax)
         ax.add_collection(p)
         return ax, p
@@ -224,7 +270,29 @@ class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritanc
     def __makePatchVerticies__(self, eqPitchAngleBins, energyBins = None,
             ignoreBoxHeght = 0.2, psd = None):
         """
-        
+        NAME:    __makePatchVerticies__(self, eqPitchAngleBins, 
+                    energyBins = None, ignoreBoxHeght = 0.2, psd = None)
+        USE:     This helper function for drawPatches calculates the locations
+                 of the patch verticies from pitch angle and energy bins (It 
+                 maps them to momentum space).
+        INPUT:   REQUIRED:
+                    eqPitchAngleBins - Equatorial pitch angle bins/
+                 OPTIONAL:
+                    energyBins = None - Energy bins. If None will use 
+                        self.Ebins
+                    psd = None: Phase space density for the bins. It None will
+                        use self.meanPsd.
+                    ignoreBoxHeght = 0.2: If there is a gap in pitch angles 
+                        (due to partial equatorial picth angle coverage) do not
+                        try to draw boxes over the non-sampled pitch angles. 
+                        This compares the distance between the lower left to
+                        upper right verticies.
+        AUTHOR:  Mykhaylo Shumko
+        RETURNS: self.verticies a (4, 2, nV) array where the first dimention is
+                 over the verticies, the second dimention is the p_perp, 
+                 p_parallel coordinates of those verticies, and the third 
+                 dimention of size nV are the patches.
+        MOD:     2017-10-03
         """
         if energyBins is None:
             energyBins = self.Ebins
