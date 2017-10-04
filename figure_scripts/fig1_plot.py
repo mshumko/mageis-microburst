@@ -121,10 +121,10 @@ def plot_emfisis(rb_id, date, tBounds, ax, cax, vmin = 10**-10, vmax = 10**-2,
     
 if __name__ == '__main__':
     ### TOP LEVEL USER INPUT ###
-    zoomedT = False
+    zoomedT = True
     plotBurst = False
-    savePlot = False
-    tKey = 'all'
+    savePlot = True
+    tKey = 'muBurst'
     times = {'muBurst':[datetime(2017, 3, 31, 11, 15, 0), datetime(
                         2017, 3, 31, 11, 18, 10)],
             'later':[datetime(2017, 3, 31, 11, 35, 0), datetime(
@@ -238,8 +238,10 @@ if __name__ == '__main__':
 
     if tKey == 'muBurst':
         if zoomedT:
-            ax[0].set_xlim(datetime(2017, 3, 31, 11, 17, 8), 
-                datetime(2017, 3, 31, 11, 17, 20))
+            ax[0].set_xlim(datetime(2017, 3, 31, 11, 17, 1), 
+                datetime(2017, 3, 31, 11, 17, 12))
+#            ax[0].set_xlim(datetime(2017, 3, 31, 11, 17, 8), 
+#                datetime(2017, 3, 31, 11, 17, 20))
         else:
             ax[0].set_xlim(datetime(2017, 3, 31, 11, 16, 0), datetime(2017, 3, 31, 11, 18, 10))
     
