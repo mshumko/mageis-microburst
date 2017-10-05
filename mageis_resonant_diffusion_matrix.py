@@ -20,7 +20,7 @@ instrument = 'LOW'
 mlat0 = -20 # Degrees
 n0 = 0.5E6 # e-/cm^3
 L = 5.7
-a = -1 # Electron number density power law coefficient.
+a = 1 # Electron number density power law coefficient.
 mlats = [0, 20]
 # Fraction of the cyclotron frequency to draw the diffusion curves.
 diffFraction = 0.4 
@@ -186,7 +186,7 @@ fig.text(0.5, 0.01, r'$p_{\perp}/m_e c$', ha='center')
 fig.text(0.01, 0.5, r'$p_{\parallel}/m_e c$', va='center', rotation='vertical')
 
 gs.tight_layout(fig, h_pad = 0, w_pad = 0, rect=[0.02, 0.03, 1, 0.95])
-plt.savefig('resonance_diffusion_matrix_{0}_{1}_n0_{2}_a_{3}_.png'.format(
-    tBounds[0].strftime("%H:%M:%S"), tBounds[1].strftime("%H:%M:%S"), n0*1E-6, a),
-    dpi=200)
+plt.savefig('resonance_diffusion_matrix_{0}_{1}_n0_{2}_a_{3}.png'.format(
+    tBounds[0].strftime("%H:%M:%S"), tBounds[1].strftime("%H:%M:%S"), 
+    str(n0*1E-6).replace('.', '-'), a), dpi=100)
 plt.show()
