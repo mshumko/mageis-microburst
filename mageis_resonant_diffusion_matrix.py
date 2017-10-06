@@ -21,7 +21,7 @@ mlat0 = -20 # Degrees
 n0 = 0.5E6 # e-/cm^3
 L = 5.7
 a = 1 # Electron number density power law coefficient.
-mlats = [0, 20]
+mlats = [0, 20, 30]
 # Fraction of the cyclotron frequency to draw the diffusion curves.
 diffFraction = 0.4 
 
@@ -81,6 +81,7 @@ nRows = 2
 nCols = 4
 dCols = 10
 fig = plt.figure(figsize=(13, 11), dpi = 80, facecolor = 'white')
+#fig = plt.figure(figsize=(13, 13), dpi = 80, facecolor = 'white')
 plt.rcParams.update({'font.size': 15})
 gs = gridspec.GridSpec(nRows, dCols*nCols+2)
 gs.update(wspace=0, hspace=0.05)
