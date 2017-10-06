@@ -39,7 +39,7 @@ vmax = 10**4 #10**5/2 # During microburst time.
 
 energies = np.arange(2)
 
-tKey = 'quiet2'
+tKey = 'muBurst'
 date = datetime(2017, 3, 31)
 times = {'muBurst':[datetime(2017, 3, 31, 11, 15), 
                     datetime(2017, 3, 31, 11, 25)],
