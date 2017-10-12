@@ -8,7 +8,7 @@ import matplotlib.gridspec as gridspec
 plt.rcParams.update({'font.size': 12})
 
 import sys
-sys.path.insert(0, '/home/mike/research/mission-tools/vap')
+sys.path.insert(0, '/home/mike/research/mission-tools/rbsp')
 import plot_mageis
 import IRBEM
 
@@ -103,7 +103,7 @@ bx.set(title='MagEIS LOW timeseries from {}'.format(date.isoformat()))
 bx.legend()
 bx.set_ylabel(r'Flux $(keV \ cm^2 \ sr \ s)^{-1}$')
 cx.set_title('MagEIS LOW pitch angle evolution')
-cx.set_ylabel(r'$\alpha_{eq}$')
+cx.set_ylabel(r'$\alpha_{sc}$')
 
 #dx.set_ylabel(r'$\alpha_{eq}$')
 cx.set_xlabel('UTC')
