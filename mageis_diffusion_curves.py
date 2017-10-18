@@ -16,9 +16,9 @@ import operator
 from matplotlib.patches import Polygon
 import matplotlib.collections
 
-sys.path.insert(0, '/home/mike/Dropbox/0_grad_work/mission_tools')
-import plot_emfisis_spectrogram
-import plot_mageis_spectra
+sys.path.insert(0, '/home/mike/research/mission-tools/rbsp')
+import plot_emfisis_spectra
+import plot_mageis
 import psd_fit
 import resonant_diffusion_curves
 
@@ -31,7 +31,7 @@ m_e = 9.1E-31 # kg
 q_e = -1.6E-19 # C
 Erest = 511 # keV
 
-class PhaseSpaceDensity(plot_mageis_spectra.magEISspectra): # Utilize inheritance
+class PhaseSpaceDensity(plot_mageis.magEISspectra): # Utilize inheritance
     def __init__(self, rb_id, tRange, instrument, **kwargs):
         """
         NAME:    PhaseSpaceDensity(rb_id, times, instrument)
@@ -511,6 +511,7 @@ if __name__ == '__main__':
     # Resonant-diffusion parameters
     vParallel_res = c*np.linspace(0, -0.99, num = 1000)
     mlat = 0
+    mlat0 = 20
     L = 5.7
     n0 = 0.5E6 # Density at the time
 
@@ -518,7 +519,8 @@ if __name__ == '__main__':
     if drawResonanceCurves:
         # w/w_ce = 0.1 
         vPerp_res = resonant_diffusion_curves.resCurveVperp(
-            vParallel_res, 0.1*resonant_diffusion_curves.wce(mlat, L), n0, mlat, L)
+            vParallel_res, 0.1*resonant_diffusion_curves.wce(mlat, L), n0,
+            mlat0, mlat, L)
         pPerp_res, pParallel_res = resonant_diffusion_curves.p(
             vPerp_res, vParallel_res)
         polarPsdPlt.plot(pPerp_res, pParallel_res, 'g')
@@ -528,7 +530,8 @@ if __name__ == '__main__':
 
         # w/w_ce = 0.4 
         vPerp_res = resonant_diffusion_curves.resCurveVperp(
-            vParallel_res, 0.4*resonant_diffusion_curves.wce(mlat, L), n0, mlat, L)
+            vParallel_res, 0.4*resonant_diffusion_curves.wce(mlat, L), n0, 
+            mlat0, mlat, L)
         pPerp_res, pParallel_res = resonant_diffusion_curves.p(
             vPerp_res, vParallel_res)
         polarPsdPlt.plot(pPerp_res, pParallel_res, 'r')
@@ -538,7 +541,8 @@ if __name__ == '__main__':
 
         # w/w_ce = 0.6
         vPerp_res = resonant_diffusion_curves.resCurveVperp(
-            vParallel_res, 0.6*resonant_diffusion_curves.wce(mlat, L), n0, mlat, L)
+            vParallel_res, 0.6*resonant_diffusion_curves.wce(mlat, L), n0, 
+            mlat0, mlat, L)
         pPerp_res, pParallel_res = resonant_diffusion_curves.p(
             vPerp_res, vParallel_res)
         polarPsdPlt.plot(pPerp_res, pParallel_res, 'b')
@@ -555,7 +559,7 @@ if __name__ == '__main__':
         for e in Earr[::2]:
             vPerp_diff = resonant_diffusion_curves.diffCurveVperp(
                 vParallel_diff, 0.4*resonant_diffusion_curves.wce(mlat, L), 
-                n0, mlat, L, e)
+                n0, mlat0, mlat, L, e)
             pPerp_diff, pParallel_diff = resonant_diffusion_curves.p(vPerp_diff, 
                 vParallel_diff)
             polarPsdPlt.plot(pPerp_diff, pParallel_diff, 'c--')
