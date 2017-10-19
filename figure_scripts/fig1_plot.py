@@ -94,11 +94,12 @@ def plot_mageis_timseries(rb_id, fluxObj, channels = None, ax = None, Nsmooth = 
     return ax
     
 def plot_mageis_alpha(rb_id, fluxObj, channel, ax, downSampleAlpha = 1, cax = None):
-    fluxObj.plotHighRateSpectra(E_ch = channel, ax = ax, downsampleAlpha = downSampleAlpha, cax = cax, pltTitle = False,
+    fluxObj.plotHighRateSpectra(E_ch = channel, ax = ax, 
+        downsampleAlpha = downSampleAlpha, cax = cax, pltTitle = False,
         vmin = None, vmax = None, scatterS = 40) #cax = cbar_ax[E+1]
     mageis_params = get_mageis_params(rb_id)
-    ax.set_ylabel('VAP-A MagEIS {}-{} keV\nlocal pitch angle (deg)'.format(mageis_params['Elow'][channel], 
-                mageis_params['Ehigh'][channel]))
+    ax.set_ylabel('VAP-A MagEIS {}-{} keV\nlocal pitch angle (deg)'.format(
+        mageis_params['Elow'][channel], mageis_params['Ehigh'][channel]))
 
     return ax
     
@@ -121,7 +122,7 @@ def plot_emfisis(rb_id, date, tBounds, ax, cax, vmin = 10**-10, vmax = 10**-2,
     
 if __name__ == '__main__':
     ### TOP LEVEL USER INPUT ###
-    zoomedT = True
+    zoomedT = False
     plotBurst = False
     savePlot = True
     tKey = 'muBurst'
