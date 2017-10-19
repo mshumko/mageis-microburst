@@ -22,24 +22,30 @@ import fig1_plot
 
 # "Interactive time range selection."
 tKey = 'muBurst'
-rb_id = 'B'
+rb_id = 'A'
+if rb_id == 'A':
+    highrate = True
+else:
+    highrate = False
 times = {'muBurst':[datetime(2017, 3, 31, 11, 17, 0), 
                     datetime(2017, 3, 31, 11, 17, 20)],
+            'rbspb_b_peaks':[datetime(2017, 3, 31, 11, 17), 
+                    datetime(2017, 3, 31, 11, 18, 30)],
             'later':[datetime(2017, 3, 31, 11, 35, 0), 
                     datetime(2017, 3, 31, 11, 38)],
             'all':[datetime(2017, 3, 31, 11, 15), 
                     datetime(2017, 3, 31, 11, 20)]}
 tBounds = times[tKey]
 cmin = 2E4
-cmax = 2E5
+cmax = 1E5
 
 # Load the RBSPICE data
 rbspiceObj = plot_rbspice.plot_rbspice(rb_id, tBounds[0], tBounds=tBounds)
 rbspiceObj.loadData()
 #### Load MagEIS data
-###mageisObj = plot_mageis.magEISspectra(rb_id, tBounds[0], dataLevel = 3)
-###mageisObj.tBounds = tBounds
-###mageisObj.loadMagEIS(instrument = 'LOW', highrate = False)
+mageisObj = plot_mageis.magEISspectra(rb_id, tBounds[0], dataLevel = 3)
+mageisObj.tBounds = tBounds
+mageisObj.loadMagEIS(instrument = 'LOW', highrate = highrate)
 
 # Set up three panels to plot MagEIS timeseries around the microburst,
 # Highlight the times used for the PSD analysis, show MagEIS and RBSPICE 
@@ -54,15 +60,15 @@ for j in range(1, npanels):
 alphaCbar = fig.add_subplot(gs[1, -1])
 
 # Plot MagEIS
-###mageisObj.plotHighRateTimeSeries(ax=ax[0], smooth=10,
-###    chLegend=False) # flux
-###mageisObj.plotHighRateSpectra(E_ch=1, scatterS=50, ax=ax[1], 
-###    plotCb=False, pltTitle=False, pltXlabel=False, cmin=cmin, cmax=cmax) # Alpha
-###ax[0].legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
-###ax[0].set(ylabel=('MagEIS-LOW electron flux \n ' + 
-###    r'$(cm^2 \ sr \ s \ keV)^{-1}$'))
-fig1_plot.plot_mageis(rb_id.upper(), 't', tBounds, False, ax = ax[0])
-fig1_plot.plot_mageis(rb_id.upper(), 'a', tBounds, False, ax = ax[1])
+mageisObj.plotHighRateTimeSeries(ax=ax[0], smooth=10,
+    chLegend=False) # flux
+mageisObj.plotHighRateSpectra(E_ch=1, scatterS=50, ax=ax[1], 
+    plotCb=False, pltTitle=False, pltXlabel=False, cmin=cmin, cmax=cmax) # Alpha
+ax[0].legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
+ax[0].set(ylabel=('MagEIS-LOW electron flux \n ' + 
+    r'$(cm^2 \ sr \ s \ keV)^{-1}$'))
+#fig1_plot.plot_mageis(rb_id.upper(), 't', tBounds, False, ax = ax[0])
+#fig1_plot.plot_mageis(rb_id.upper(), 'a', tBounds, False, ax = ax[1], channels=1)
 
 
 # plot RBSPICE

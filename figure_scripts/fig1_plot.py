@@ -18,9 +18,9 @@ from datetime import datetime, timedelta
 import matplotlib.gridspec as gridspec
 #import operator
 
-sys.path.insert(0, '/home/mike/Dropbox/0_grad_work/mission_tools')
-import plot_emfisis_spectrogram
-import plot_mageis_spectra
+sys.path.insert(0, '/home/mike/research/mission-tools/rbsp/')
+import plot_mageis as plot_mageis_lib
+import plot_emfisis_spectra
    
 def get_mageis_params(ids):
     """
@@ -49,7 +49,7 @@ def get_mageis_params(ids):
                 
 def plot_mageis(rb_id, plotType, tRange, highrate, ax = None, Alpha = None, 
         channels = None, Nsmooth = None, cax = None, downSampleAlpha = 1):
-    fluxObj = plot_mageis_spectra.magEISspectra(rb_id, tRange[0], dataLevel = 3)
+    fluxObj = plot_mageis_lib.magEISspectra(rb_id, tRange[0], dataLevel = 3)
     fluxObj.tBounds = tRange
     fluxObj.loadMagEIS(instrument = 'LOW', highrate = highrate)
     
@@ -107,7 +107,7 @@ def plot_emfisis(rb_id, date, tBounds, ax, cax, vmin = 10**-10, vmax = 10**-2,
         burst_plot = False, lowF = 50):
     # Increase time range to get data for the entire desired time.
     tBounds = [tBounds[0] - timedelta(seconds = 5), tBounds[1] + timedelta(seconds = 5)]
-    pObj = plot_emfisis_spectrogram.EMFISISspectra(rb_id, date, tBounds = tBounds)
+    pObj = plot_emfisis_spectra.EMFISISspectra(rb_id, date, tBounds = tBounds)
     pObj.loadWFRSpectra()
     pObj.loadMagEphem()
     pObj.plotSpectra(ax = ax, spectraMax = vmax, spectraMin = vmin, lowF = lowF, 
