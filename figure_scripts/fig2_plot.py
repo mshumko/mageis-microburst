@@ -12,7 +12,7 @@ import os
 #sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..')))
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-#import matplotlib.dates as mdates
+import matplotlib.dates as mdates
 from datetime import datetime, timedelta
 
 sys.path.insert(0, '/home/mike/research/mission-tools/rbsp/')
@@ -31,9 +31,13 @@ times = {'muBurst':[datetime(2017, 3, 31, 11, 17, 0),
                     datetime(2017, 3, 31, 11, 20)]}
 tBounds = times[tKey]
 
-# Load the RBSPICE data
-rbspiceObj = plot_rbspice.plot_rbspice(rb_id, tBounds[0], tBounds=tBounds)
-rbspiceObj.loadData()
+#### Load the RBSPICE data
+###rbspiceObj = plot_rbspice.plot_rbspice(rb_id, tBounds[0], tBounds=tBounds)
+###rbspiceObj.loadData()
+# Load MagEIS data
+mageisObj = plot_mageis.magEISspectra(rb_id, tBounds[0], dataLevel = 3)
+mageisObj.tBounds = tBounds
+mageisObj.loadMagEIS(instrument = 'LOW', highrate = True)
 
 # Set up three panels to plot MagEIS timeseries around the microburst,
 # Highlight the times used for the PSD analysis, show MagEIS and RBSPICE 
@@ -48,16 +52,28 @@ for j in range(1, npanels):
 alphaCbar = fig.add_subplot(gs[1, -1])
 
 # Plot MagEIS
-mageisObj = plot_mageis.magEISspectra(rb_id, tBounds[0], dataLevel = 3)
-mageisObj.tBounds = tBounds
-mageisObj.loadMagEIS(instrument = 'LOW', highrate = True)
-mageisObj.plotHighRateTimeSeries(ax=ax[0], smooth=10)
+mageisObj.plotHighRateTimeSeries(ax=ax[0], smooth=10,
+    chLegend=False)
+ax[0].legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
+ax[0].set(ylabel=('MagEIS-LOW electron flux \n ' + 
+    r'$(cm^2 \ sr \ s \ keV)^{-1}$'))
 
-# plot RBSPICE
-az, p = rbspiceObj.plotTelecopeAlphaScatter(range(10, 20), ax=ax[1])
-plt.colorbar(p, ax=az, cax=alphaCbar, label=r'Flux $(keV \ cm^2 \ s \ sr)^-1$')
-ax[1].set(facecolor='k', title='', ylabel=r'RBSPICE $\alpha_{sc}$')
-ax[-1].set_xlabel('UTC')
+#### plot RBSPICE
+###az, p = rbspiceObj.plotTelecopeAlphaScatter(range(10, 20), ax=ax[1])
+###plt.colorbar(p, ax=az, cax=alphaCbar, label=r'Flux $(keV \ cm^2 \ s \ sr)^-1$')
+###ax[1].set(facecolor='k', title='', ylabel=r'RBSPICE $\alpha_{sc}$')
+###ax[-1].set_xlabel('UTC')
+plt.suptitle("RBSP-A from {}".format(tBounds[0].date()))
+
+# Ticks at every second
+second5s = mdates.SecondLocator(bysecond = range(0, 60, 5), 
+                interval = 1)
+for a in ax:
+    #a.xaxis.set_major_locator(second5s)
+    a.xaxis.set_minor_locator(mdates.SecondLocator())
+    a.xaxis.set_tick_params(which='major', width=2, length=7)
+    a.xaxis.set_tick_params(which='minor', width=2, length=4)
+
 fig.autofmt_xdate()
 gs.tight_layout(fig)
 plt.show()
