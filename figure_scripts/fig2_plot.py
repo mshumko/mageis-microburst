@@ -37,7 +37,7 @@ times = {'muBurst':[datetime(2017, 3, 31, 11, 17, 0),
                     datetime(2017, 3, 31, 11, 20)]}
 tBounds = times[tKey]
 cmin = 2E4
-cmax = 1E5
+cmax = 2E5
 
 # Load the RBSPICE data
 rbspiceObj = plot_rbspice.plot_rbspice(rb_id, tBounds[0], tBounds=tBounds)
@@ -73,7 +73,7 @@ ax[0].set(ylabel=('MagEIS-LOW electron flux \n ' +
 
 # plot RBSPICE
 ax[1], p = rbspiceObj.plotTelecopeAlphaScatter(range(14, 20), ax=ax[1], 
-    cmin=cmin, cmax=cmax)
+    cmin=cmin, cmax=cmax, telescopes=range(4))
 plt.colorbar(p, ax=ax[1], cax=alphaCbar, label=r'Flux $(keV \ cm^2 \ s \ sr)^{-1}$')
 ax[1].set(facecolor='k', title='', ylabel=r'$\alpha_{sc}$')
 ax[-1].set_xlabel('UTC')
