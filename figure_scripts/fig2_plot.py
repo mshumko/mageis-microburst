@@ -15,18 +15,52 @@ import matplotlib.gridspec as gridspec
 #import matplotlib.dates as mdates
 from datetime import datetime, timedelta
 
-#import operator
-
-sys.path.insert(0, '/home/mike/Dropbox/0_grad_work/mission_tools/rbsp')
-import plot_mageis_spectra
+sys.path.insert(0, '/home/mike/research/mission-tools/rbsp/')
+import plot_mageis
 import plot_rbspice
+import fig1_plot
 
 # "Interactive time range selection."
 tKey = 'muBurst'
-times = {'muBurst':[datetime(2017, 3, 31, 11, 15, 0), 
-                    datetime(2017, 3, 31, 11, 18, 10)],
+rb_id = 'a'
+times = {'muBurst':[datetime(2017, 3, 31, 11, 17, 0), 
+                    datetime(2017, 3, 31, 11, 17, 20)],
             'later':[datetime(2017, 3, 31, 11, 35, 0), 
                     datetime(2017, 3, 31, 11, 38)],
             'all':[datetime(2017, 3, 31, 11, 15), 
                     datetime(2017, 3, 31, 11, 20)]}
-tRange = times[tKey]
+tBounds = times[tKey]
+
+# Load the RBSPICE data
+rbspiceObj = plot_rbspice.plot_rbspice(rb_id, tBounds[0], tBounds=tBounds)
+rbspiceObj.loadData()
+
+# Set up three panels to plot MagEIS timeseries around the microburst,
+# Highlight the times used for the PSD analysis, show MagEIS and RBSPICE 
+# Pitch angle evolution, and EMFISIS magnetometer data.
+npanels = 3
+fig = plt.figure(figsize = (11, 11), dpi = 80)
+gs = gridspec.GridSpec(npanels, 10)
+ax = npanels*[None]
+ax[0] = fig.add_subplot(gs[0,:-1])
+for j in range(1, npanels):
+    ax[j] = fig.add_subplot(gs[j, :-1], sharex = ax[0])
+alphaCbar = fig.add_subplot(gs[1, -1])
+
+# Plot MagEIS
+mageisObj = plot_mageis.magEISspectra(rb_id, tBounds[0], dataLevel = 3)
+mageisObj.tBounds = tBounds
+mageisObj.loadMagEIS(instrument = 'LOW', highrate = True)
+mageisObj.plotHighRateTimeSeries(ax=ax[0], smooth=10)
+
+# plot RBSPICE
+az, p = rbspiceObj.plotTelecopeAlphaScatter(range(10, 20), ax=ax[1])
+plt.colorbar(p, ax=az, cax=alphaCbar, label=r'Flux $(keV \ cm^2 \ s \ sr)^-1$')
+ax[1].set(facecolor='k', title='', ylabel=r'RBSPICE $\alpha_{sc}$')
+ax[-1].set_xlabel('UTC')
+fig.autofmt_xdate()
+gs.tight_layout(fig)
+plt.show()
+    
+
+
