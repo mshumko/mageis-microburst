@@ -19,9 +19,10 @@ sys.path.insert(0, '/home/mike/research/mission-tools/rbsp/')
 import plot_mageis
 import plot_rbspice
 import fig1_plot
+import spacepy.pycdf
 
 # "Interactive time range selection."
-tKey = 'muBurst'
+tKey = 'rbspb_b_peaks'
 rb_id = 'A'
 if rb_id == 'A':
     highrate = True
@@ -50,7 +51,7 @@ mageisObj.loadMagEIS(instrument = 'LOW', highrate = highrate)
 # Set up three panels to plot MagEIS timeseries around the microburst,
 # Highlight the times used for the PSD analysis, show MagEIS and RBSPICE 
 # Pitch angle evolution, and EMFISIS magnetometer data.
-npanels = 2
+npanels = 3
 fig = plt.figure(figsize = (11, 11), dpi = 80)
 gs = gridspec.GridSpec(npanels, 10)
 ax = npanels*[None]
@@ -76,6 +77,15 @@ ax[1], p = rbspiceObj.plotTelecopeAlphaScatter(range(14, 20), ax=ax[1],
     cmin=cmin, cmax=cmax, telescopes=range(4))
 plt.colorbar(p, ax=ax[1], cax=alphaCbar, label=r'Flux $(keV \ cm^2 \ s \ sr)^{-1}$')
 ax[1].set(facecolor='k', title='', ylabel=r'$\alpha_{sc}$')
+
+# plot EMFISIS magnetometer data
+b = spacepy.pycdf.CDF('/home/mike/research/rbsp/data/emfisis/rbsp{}/'
+    'rbsp-{}_magnetometer_4sec-geo_emfisis-L3_20170331_v1.6.1.cdf'.format(
+    rb_id.lower(), rb_id.lower()))
+idB = np.where((b['Epoch'][:] > tBounds[0]) & (b['Epoch'][:] < tBounds[1]+timedelta(minutes=1)))[0] 
+ax[-1].plot(np.array(b['Epoch'])[idB], np.array(b['Magnitude'])[idB])
+ax[-1].set_ylabel('|B| (nT)')
+
 ax[-1].set_xlabel('UTC')
 plt.suptitle("RBSP-{} from {}".format(rb_id.upper(), tBounds[0].date()))
 
@@ -87,7 +97,9 @@ for a in ax:
     a.xaxis.set_minor_locator(mdates.SecondLocator())
     a.xaxis.set_tick_params(which='major', width=2, length=7)
     a.xaxis.set_tick_params(which='minor', width=2, length=4)
+    
 
+ax[0].set_xlim(tBounds)
 fig.autofmt_xdate()
 gs.tight_layout(fig)
 plt.show()
