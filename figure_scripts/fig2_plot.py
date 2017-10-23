@@ -93,11 +93,19 @@ ax[0].set_title("RBSP-{} from {}".format(rb_id.upper(), tBounds[0].date()))
 # Ticks at every second
 second5s = mdates.SecondLocator(bysecond = range(0, 60, 5), 
                 interval = 1)
-for a in ax:
+                
+abcLabels = ['(a)', '(b)']
+abcColors = ['k', 'w']
+
+for i, a in enumerate(ax):
     #a.xaxis.set_major_locator(second5s)
     a.xaxis.set_minor_locator(mdates.SecondLocator())
     a.xaxis.set_tick_params(which='major', width=2, length=7)
     a.xaxis.set_tick_params(which='minor', width=2, length=4)
+    
+    # Add subplot labels
+    a.text(.01, 0.95, abcLabels[i], transform=a.transAxes, va='top', 
+            color=abcColors[i])     
     
 # Draw vertical lines to show the resonant diffusion analysis time range.
 ax[0].axvline(datetime(2017, 3, 31, 11, 17, 3), c='k',
