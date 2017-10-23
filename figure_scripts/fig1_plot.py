@@ -48,7 +48,7 @@ def get_mageis_params(ids):
     return {'Emid':Emid, 'Elow':Elow, 'Ehigh':Ehigh, 'G0dE':G0dE}
                 
 def plot_mageis(rb_id, plotType, tRange, highrate, ax = None, Alpha = None, 
-        channels = None, Nsmooth = None, cax = None, downSampleAlpha = 1):
+        channels = None, Nsmooth = None, cax = None, downSampleAlpha = 1, vmin=None, vmax=None):
     fluxObj = plot_mageis_lib.magEISspectra(rb_id, tRange[0], dataLevel = 3)
     fluxObj.tBounds = tRange
     fluxObj.loadMagEIS(instrument = 'LOW', highrate = highrate)
@@ -56,7 +56,8 @@ def plot_mageis(rb_id, plotType, tRange, highrate, ax = None, Alpha = None,
     if plotType == 't':
         plot_mageis_timseries(rb_id, fluxObj, ax = ax, Nsmooth = Nsmooth)
     elif plotType == 'a':
-        plot_mageis_alpha(rb_id, fluxObj, channels, ax, downSampleAlpha = downSampleAlpha, cax = cax)
+        plot_mageis_alpha(rb_id, fluxObj, channels, ax, vmin=vmin, vmax=vmax,
+            downSampleAlpha=downSampleAlpha, cax = cax)
         
     return
     
@@ -88,18 +89,19 @@ def plot_mageis_timseries(rb_id, fluxObj, channels = None, ax = None, Nsmooth = 
                 mageis_params['Ehigh'][ch]))
 
     # Label y-axis
-    ax.set_ylabel('VAP-{} Electron flux \n'.format(rb_id.upper()) + \
+    ax.set_ylabel('MagEIS LOW electron flux \n'.format(rb_id.upper()) + \
         r'$(keV \ cm^2 \ sr \ s)^{-1}$')
     ax.set_yscale('log')
     return ax
     
-def plot_mageis_alpha(rb_id, fluxObj, channel, ax, downSampleAlpha = 1, cax = None):
+def plot_mageis_alpha(rb_id, fluxObj, channel, ax, downSampleAlpha = 1, cax = None, vmin=None, vmax=None):
     fluxObj.plotHighRateSpectra(E_ch = channel, ax = ax, 
-        downsampleAlpha = downSampleAlpha, cax = cax, pltTitle = False,
-        vmin = None, vmax = None, scatterS = 40) #cax = cbar_ax[E+1]
+        downsampleAlpha = downSampleAlpha, cax=cax, pltTitle=False,
+        cmin=vmin, cmax=vmax, scatterS=40) #cax = cbar_ax[E+1]
     mageis_params = get_mageis_params(rb_id)
-    ax.set_ylabel('VAP-A MagEIS {}-{} keV\nlocal pitch angle (deg)'.format(
-        mageis_params['Elow'][channel], mageis_params['Ehigh'][channel]))
+    ax.set_ylabel('MagEIS {}-{} keV\n'.format(
+        mageis_params['Elow'][channel], mageis_params['Ehigh'][channel]) +
+        r'$\alpha_{sc}$ (deg)')
 
     return ax
     
@@ -139,10 +141,10 @@ if __name__ == '__main__':
 
     # Panels you would like to plot. The value in the key:value pairs is the subplot 
     # position to plot. If you dont want to plot a panel, use a negative number.
-    panelDict = {'vapa_mageis_timeseries':0, 'vapa_mageis_alpha':1,
-        'vapa_emfisis_wfr':2, 'vapa_emfisis_wfr_burst':-1,
-        'vapb_mageis_timeseries':3, 'vapb_mageis_alpha':4,
-        'vapb_emfisis_wfr':5, 'vapa_emfisis_wfr_burst':-1}   
+    panelDict = {'rbspa_mageis_timeseries':0, 'rbspa_mageis_alpha':1,
+        'rbspa_emfisis_wfr':2, 'rbspa_emfisis_wfr_burst':-1,
+        'rbspb_mageis_timeseries':3, 'rbspb_mageis_alpha':4,
+        'rbspb_emfisis_wfr':5, 'rbspa_emfisis_wfr_burst':-1}   
     # Figure out how many panels to plot.
     vals = np.array(list(panelDict.values()))
     # See how many positive numbers the panel Dict has
@@ -157,82 +159,91 @@ if __name__ == '__main__':
         ax[j] = fig.add_subplot(gs[j, :-1], sharex = ax[0])
     
    # Create colorbar subplots (so the time axis will line up).
-    if bool(panelDict['vapa_mageis_alpha']):
-        cax_mageis_vapa = fig.add_subplot(gs[panelDict['vapa_mageis_alpha'], -1])
-    if bool(panelDict['vapb_mageis_alpha']):
-        cax_mageis_vapb = fig.add_subplot(gs[panelDict['vapb_mageis_alpha'], -1])
-    if bool(panelDict['vapa_emfisis_wfr']+1) == True:
-        cax_emfisis_vapa = fig.add_subplot(gs[panelDict['vapa_emfisis_wfr'], -1])
-    if bool(panelDict['vapb_emfisis_wfr']+1) == True:
-        cax_emfisis_vapb = fig.add_subplot(gs[panelDict['vapb_emfisis_wfr'], -1])
+    if bool(panelDict['rbspa_mageis_alpha']):
+        cax_mageis_rbspa = fig.add_subplot(gs[panelDict['rbspa_mageis_alpha'], -1])
+    if bool(panelDict['rbspb_mageis_alpha']):
+        cax_mageis_rbspb = fig.add_subplot(gs[panelDict['rbspb_mageis_alpha'], -1])
+    if bool(panelDict['rbspa_emfisis_wfr']+1) == True:
+        cax_emfisis_rbspa = fig.add_subplot(gs[panelDict['rbspa_emfisis_wfr'], -1])
+    if bool(panelDict['rbspb_emfisis_wfr']+1) == True:
+        cax_emfisis_rbspb = fig.add_subplot(gs[panelDict['rbspb_emfisis_wfr'], -1])
         
     ### PLOT MAGEIS DATA ###
-    if bool(panelDict['vapa_mageis_timeseries']+1) == True:
-        axi = ax[panelDict['vapa_mageis_timeseries']]
+    if bool(panelDict['rbspa_mageis_timeseries']+1) == True:
+        axi = ax[panelDict['rbspa_mageis_timeseries']]
         plot_mageis('A', 't', tRange, True, ax = axi, Nsmooth = 1)
         axi.legend(loc = 1, bbox_to_anchor=(1.2, 1))
    
-    if bool(panelDict['vapb_mageis_timeseries']+1) == True:  
-        axi = ax[panelDict['vapb_mageis_timeseries']]
+    if bool(panelDict['rbspb_mageis_timeseries']+1) == True:  
+        axi = ax[panelDict['rbspb_mageis_timeseries']]
         plot_mageis('B', 't', tRange, False, ax = axi)
         axi.legend(loc = 1, bbox_to_anchor=(1.2, 1))
         
-    if bool(panelDict['vapa_mageis_alpha']+1) == True:
-        axi = ax[panelDict['vapa_mageis_alpha']]
+    if bool(panelDict['rbspa_mageis_alpha']+1) == True:
+        axi = ax[panelDict['rbspa_mageis_alpha']]
         plot_mageis('A', 'a', tRange, True, ax = axi, channels = 1, 
-            downSampleAlpha = 10, cax = cax_mageis_vapa)
-#        axi.set_ylabel('VAP-A MagEIS {} keV\nlocal pitch angle (deg)'.format(mageis_params['Elow'][ch], 
+            downSampleAlpha=10, cax = cax_mageis_rbspa, vmin=2E4, vmax=2E5)
+#        axi.set_ylabel('rbsp-A MagEIS {} keV\nlocal pitch angle (deg)'.format(mageis_params['Elow'][ch], 
 #                mageis_params['Ehigh'][ch]))
         axi.legend()
-    if bool(panelDict['vapb_mageis_alpha']+1) == True:
-        axi = ax[panelDict['vapb_mageis_alpha']]
+    if bool(panelDict['rbspb_mageis_alpha']+1) == True:
+        axi = ax[panelDict['rbspb_mageis_alpha']]
         plot_mageis('B', 'a', tRange, False, ax = axi, channels = 1, 
-            cax = cax_mageis_vapb)
-#        axi.set_ylabel('VAP-B MagEIS {}\nlocal pitch angle (deg)')
+            cax = cax_mageis_rbspb)
+#        axi.set_ylabel('rbsp-B MagEIS {}\nlocal pitch angle (deg)')
         axi.legend()
-    if bool(panelDict['vapa_emfisis_wfr']+1) == True:
-        axi = ax[panelDict['vapa_emfisis_wfr']]
+    if bool(panelDict['rbspa_emfisis_wfr']+1) == True:
+        axi = ax[panelDict['rbspa_emfisis_wfr']]
         zz, MLT_A, Lstar_A, MLAT_A = plot_emfisis('A', tRange[0], tRange, axi,
-            cax_emfisis_vapa, burst_plot = plotBurst, vmax = 10**-2, vmin = 10**-10)
+            cax_emfisis_rbspa, burst_plot = plotBurst, vmax = 10**-2, vmin = 10**-10)
         # Plot the EMFISIS burst data
-        axi.set_ylabel('VAP-A EMFISIS WFR \n frequency (Hz)')
-    if bool(panelDict['vapb_emfisis_wfr']+1) == True:
-        axi = ax[panelDict['vapb_emfisis_wfr']]
+        axi.set_ylabel('EMFISIS WFR \n frequency (Hz)')
+        axi.legend_.remove() # Remove legend
+    if bool(panelDict['rbspb_emfisis_wfr']+1) == True:
+        axi = ax[panelDict['rbspb_emfisis_wfr']]
         zz, MLT_B, Lstar_B, MLAT_B = plot_emfisis('B', tRange[0], tRange, axi,
-            cax_emfisis_vapb)
-        axi.set_ylabel('VAP-B EMFISIS WFR \n frequency (Hz)')
+            cax_emfisis_rbspb)
+        axi.set_ylabel('EMFISIS WFR \n frequency (Hz)')
+        axi.legend_.remove() # Remove legen
         
-    ax[panelDict['vapa_mageis_timeseries']].set_ylim(bottom = 10**4)
-    ax[panelDict['vapb_mageis_timeseries']].set_ylim(bottom = 10**5)
+    ax[panelDict['rbspa_mageis_timeseries']].set_ylim(bottom = 10**4)
+    ax[panelDict['rbspb_mageis_timeseries']].set_ylim(bottom = 10**5)
     
     # Annotate the panels with position information
-    rbspaText = 'L* = {}, MLT = {}, MLAT = {}'.format(round(np.mean(Lstar_A), 1), 
+    rbspaText = 'L* = {}\nMLT = {}\nMLAT = {}'.format(round(np.mean(Lstar_A), 1), 
         round(np.mean(MLT_A), 1), round(np.mean(MLAT_A), 1))
-    rbspbText = 'L* = {}, MLT = {}, MLAT = {}'.format(round(np.mean(Lstar_B), 1), 
+    rbspbText = 'L* = {}\nMLT = {}\nMLAT = {}'.format(round(np.mean(Lstar_B), 1), 
         round(np.mean(MLT_B), 1), round(np.mean(MLAT_B), 1))
-    ax[0].text(.01, .9, rbspaText, transform=ax[0].transAxes)
-    ax[3].text(.01, .9, rbspbText, transform=ax[3].transAxes)
+    ax[0].text(.01, 0.85, rbspaText, transform=ax[0].transAxes, va='top')
+    ax[3].text(.01, 0.85, rbspbText, transform=ax[3].transAxes, va='top')
         
     # Turn off x-axis labels for all but last subplot
     for a in ax[:-1]:
         a.set_xlabel('')
     ax[-1].set_xlabel('UTC')
         
-    # Draw vertical line indicating the northward and 
-    # southward traveling microbursts.
-    for a in ax:
-        if not zoomedT:
-            a.axvline(datetime(2017, 3, 31, 11, 17, 16, 650000), c = 'k')
-            a.axvline(datetime(2017, 3, 31, 11, 17, 9, 800000), c = 'k')
-        
-        # Format the time axis
-        if zoomedT:
-            second5s = mdates.SecondLocator(bysecond = range(0, 60, 5), 
-                interval = 1)
-            a.xaxis.set_major_locator(second5s)
-            a.xaxis.set_minor_locator(mdates.SecondLocator())
-            a.xaxis.set_tick_params(which = 'both', width = 2, length = 5)
-                
+    # Draw vertical line indicating the time interval used
+    # in the resonant diffusion analysis, and quiet period.
+    for a in ax[0:2]:
+        a.axvline(datetime(2017, 3, 31, 11, 15, 0), c='k')
+        a.axvline(datetime(2017, 3, 31, 11, 16,50), c='k')
+        a.axvline(datetime(2017, 3, 31, 11, 17, 3), c='k',
+            ls='--')
+        a.axvline(datetime(2017, 3, 31, 11, 17, 14), c='k',
+            ls='--')        
+    # Format the time axis
+    #if zoomedT:
+    abcLabels = ['(a)', '(b)', '(c)', '(d)', '(e)', '(f)']
+    abcColors = ['k', 'k', 'w', 'k', 'k', 'w']
+    for i, a in enumerate(ax):
+        #second5s = mdates.SecondLocator(bysecond = range(0, 60, 5), 
+        #    interval = 1)
+        #a.xaxis.set_major_locator(second5s)
+        #a.xaxis.set_minor_locator(mdates.SecondLocator())
+        a.xaxis.set_tick_params(which = 'both', width = 2, length = 5)
+        # Add panel labels
+        a.text(.01, 0.95, abcLabels[i], transform=a.transAxes, va='top', 
+            color=abcColors[i])        
     # Label the panels
     ax[0].set_title('MagEIS and EMFISIS data from March 31st, '
         '2017 microburst event')
@@ -247,15 +258,36 @@ if __name__ == '__main__':
             ax[0].set_xlim(datetime(2017, 3, 31, 11, 16, 0), datetime(2017, 3, 31, 11, 18, 10))
     
     #gs.tight_layout(fig)
-    plt.subplots_adjust(left=None, bottom=0.04, right=None, top=0.97,
+    plt.subplots_adjust(left=0.15, bottom=0.04, right=None, top=0.97,
                 wspace=0.1, hspace=0.06)
                 
-    if savePlot:
-        if zoomedT:
-            plt.savefig('fig2.pdf')
-            plt.savefig('fig2.png', dpi = 200)
-        else:
-            plt.savefig('fig1.pdf')
-            plt.savefig('fig1.png', dpi = 200)
+    # Add RBSP labels
+    labelAx = plt.axes([0, 0, .05, 1], frameon=False)
+    labelAx.text(0.75, 0.75, 'RBSP-A', va='center', ha='right',
+        rotation='vertical', fontsize=15)
+    labelAx.annotate("",
+            xy=(0.75, 0.5), xycoords='data',
+            xytext=(0.75, 1), textcoords='data',
+            arrowprops=dict(arrowstyle="<->",
+                            connectionstyle="arc3"),
+            )
+    labelAx.text(0.75, 0.25, 'RBSP-B', va='center', ha='right',
+        rotation='vertical', fontsize=15)
+    labelAx.annotate("",
+            xy=(0.75, 0), xycoords='data',
+            xytext=(0.75, 0.5), textcoords='data',
+            arrowprops=dict(arrowstyle="<->",
+                            connectionstyle="arc3"),
+            )
+    
+    for a in ax[:-1]:
+        plt.setp(a.get_xticklabels(), visible=False)
+###    if savePlot:
+######        if zoomedT:
+######            plt.savefig('fig2.pdf')
+######            plt.savefig('fig2.png', dpi = 200)
+######        else:
+###        plt.savefig('fig1.pdf')
+###        plt.savefig('fig1.png', dpi = 200)
     plt.show()
 
