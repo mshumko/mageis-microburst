@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-sys.path.insert(0, '/home/mike/Dropbox/0_grad_work/mission_tools')
+sys.path.insert(0, '/home/mike/research/mission-tools/ac6')
 import read_ac_data
 
 date = datetime(2017, 3, 31)
@@ -59,23 +59,28 @@ sPplt.set(yscale = 'log', ylabel = 'counts/s', xlabel = 'UTC',
     xlim = (datetime(2017, 3, 31, 11, 19), datetime(2017, 3, 31, 11, 20, 20)) )
 posPlt.set(ylim = (4, 7.5), ylabel = 'McIlwain L (black)')
 
-sTplt.text(0.1, 0.9,'MLT = {}'.format(round(np.mean(dataA['MLT_OPQ']))), 
-    horizontalalignment='left', verticalalignment='center',
+sTplt.text(0.05, 0.9,'MLT = {}'.format(round(np.mean(dataA['MLT_OPQ']))), 
+    horizontalalignment='left', verticalalignment='top',
     transform = sTplt.transAxes, color = 'k')
 
-sPplt.text(0.1, 0.9,'AC6-A shifted by {} s\nin-track separation {} km'.format(tLag, dLag), 
-    horizontalalignment='left', verticalalignment='center',
+sPplt.text(0.05, 0.9,'AC6-A shifted by {} s\nin-track separation {} km'.format(tLag, dLag), 
+    horizontalalignment='left', verticalalignment='top',
     transform = sPplt.transAxes, color = 'k')
 
-for a in [sTplt, sPplt]:
+abcLabels = ['(a)', '(b)']
+abcColors = ['k', 'k']
+for i, a in enumerate([sTplt, sPplt]):
     a.xaxis.set_minor_locator(matplotlib.dates.SecondLocator())
     a.xaxis.set_tick_params(which = 'minor', width = 2, length = 5)
     a.xaxis.set_tick_params(which = 'major', width = 2, length = 15)
+    a.text(0.05, 0.95, abcLabels[i], transform=a.transAxes, va='top', 
+            color=abcColors[i])     
 
 plt.setp(sPplt.xaxis.get_majorticklabels(), rotation=30, ha='right')
 plt.setp(sTplt.get_xticklabels(), visible=False)
 
 sTplt.legend(loc = 1)
+posPlt.set_ylim(top=8)
 gs.tight_layout(fig)
 plt.savefig('fig2.pdf')
 plt.show()
