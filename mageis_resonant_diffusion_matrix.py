@@ -15,12 +15,13 @@ c = 3E8 # m/s
 
 # Script parameters
 tBounds = [datetime(2017, 3, 31, 11, 17, 1), datetime(2017, 3, 31, 11, 17, 12)]
+tBounds = [datetime(2017, 3, 31, 11, 17, 3), datetime(2017, 3, 31, 11, 17, 14)]
 rb_id = 'A'
 instrument = 'LOW'
 mlat0 = -20 # Degrees
-n0 = 1E6 # e-/cm^3
+n0 = 0.5E6 # e-/cm^3
 L = 5.7
-a = 1 # Electron number density power law coefficient.
+a = -1 # Electron number density power law coefficient.
 mlats = [0, 20, 30]
 # Fraction of the cyclotron frequency to draw the diffusion curves.
 diffFraction = 0.4 
@@ -29,7 +30,7 @@ dataAlphaBins = np.arange(0, 180, 5)
 extrapAlphaBins = np.arange(30, 150, 5)
 vmax = 10**-1
 vmin = 10**-4
-poptFnameDict = {'fit':'psd_fit_extrapolation_popt_111500_111700.npy',
+poptFnameDict = {'fit':'psd_fit_extrapolation_popt_111500_111650.npy',
             '1':'psd_fit_fudged_n_1_popt_111500_111700.npy',
             '2':'psd_fit_fudged_n_2_popt_111500_111700.npy',
             '4':'psd_fit_fudged_n_4_popt_111500_111700.npy'}
@@ -180,7 +181,7 @@ for ii, ax in np.ndenumerate(axArr[:-1, :]):
 for ax in axArr[-1, :]: # Throw on more x ticks.
     ax.set_xticks([0, 0.5, 1])
         
-fig.suptitle('RBSP-{} phase space density for {} \n {} - {} UT'.format(rb_id, 
+fig.suptitle('RBSP-{} MagEIS LOW phase space density for {} \n {} - {} UT'.format(rb_id, 
     tBounds[0].date(), tBounds[0].strftime("%H:%M:%S"), 
     tBounds[1].strftime("%H:%M:%S")))
 fig.text(0.5, 0.01, r'$p_{\perp}/m_e c$', ha='center')

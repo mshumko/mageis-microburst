@@ -36,7 +36,7 @@ if __name__ == '__main__':
             datetime(2017, 3, 31, 2, 53)],
         # Right before muBurst
         'quiet2':[datetime(2017, 3, 31, 11, 15, 0), 
-            datetime(2017, 3, 31, 11, 17, 0)],
+            datetime(2017, 3, 31, 11, 16, 50)],
         'quiet3':[datetime(2017, 3, 31, 19, 45), 
             datetime(2017, 3, 31, 20, 0)],
         'quiet4':[datetime(2017, 3, 31, 19, 45), 
