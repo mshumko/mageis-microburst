@@ -61,23 +61,21 @@ for j in range(1, npanels):
 alphaCbar = fig.add_subplot(gs[1, -1])
 
 # Plot MagEIS
-mageisObj.plotHighRateTimeSeries(ax=ax[0], smooth=10,
-    chLegend=False) # flux
+t, j = mageisObj.get_resolved_flux(smooth=10) # Get flux
+for ee in range(j.shape[1]):
+    ax[0].plot(t, j[:, ee], label='{}-{} keV'.format(mageisObj.Elow[ee], mageisObj.Ehigh[ee]))
 mageisObj.plotHighRateSpectra(E_ch=0, scatterS=50, ax=ax[1], 
     plotCb=False, pltTitle=False, pltXlabel=False, cmin=cmin, cmax=cmax, 
     downSampleAlpha=5) # Alpha
 ax[0].legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
 ax[0].set(ylabel=('MagEIS-LOW electron flux \n ' + 
-    r'$(cm^2 \ sr \ s \ keV)^{-1}$'))
-#fig1_plot.plot_mageis(rb_id.upper(), 't', tBounds, False, ax = ax[0])
-#fig1_plot.plot_mageis(rb_id.upper(), 'a', tBounds, False, ax = ax[1], channels=1)
-
+    r'$(cm^2 \ sr \ s \ keV)^{-1}$'), yscale='log')
 
 # plot RBSPICE
 ax[1], p = rbspiceObj.plotTelecopeAlphaScatter(range(6, 12), ax=ax[1], 
-    cmin=cmin, cmax=cmax, telescopes=range(4), Elabel=False)
+    cmin=cmin, cmax=cmax, telescopes=range(4), Elabel=False, plotColorbar=False)
 plt.colorbar(p, ax=ax[1], cax=alphaCbar, label=r'Flux $(keV \ cm^2 \ s \ sr)^{-1}$')
-ax[1].set(facecolor='k', title='', ylabel='MagEIS 29-41 keV | RBSPICE 28-40 keV\n' + r'$\alpha_{sc}$ (degrees)')
+ax[1].set(facecolor='k', title='', ylabel='MagEIS 29-41 keV | RBSPICE 28-40 keV\n' + r'$\alpha_{L}$ (degrees)')
 
 # plot EMFISIS magnetometer data
 ###b = spacepy.pycdf.CDF('/home/mike/research/rbsp/data/emfisis/rbsp{}/'

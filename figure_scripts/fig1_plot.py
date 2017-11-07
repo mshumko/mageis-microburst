@@ -101,7 +101,7 @@ def plot_mageis_alpha(rb_id, fluxObj, channel, ax, downSampleAlpha = 1, cax = No
     mageis_params = get_mageis_params(rb_id)
     ax.set_ylabel('MagEIS {}-{} keV\n'.format(
         mageis_params['Elow'][channel], mageis_params['Ehigh'][channel]) +
-        r'$\alpha_{sc}$ (deg)')
+        r'$\alpha_{L}$ (deg)')
 
     return ax
     
@@ -192,16 +192,20 @@ if __name__ == '__main__':
             cax = cax_mageis_rbspb)
 #        axi.set_ylabel('rbsp-B MagEIS {}\nlocal pitch angle (deg)')
         axi.legend()
+        
+    ### PLOT EMFISIS DATA ###
+    if tKey == 'muBurst': # Adjust the time range to get the full f_ce curves.
+        emfisisTRange = [tRange[0], tRange[1] + timedelta(minutes=1)]
     if bool(panelDict['rbspa_emfisis_wfr']+1) == True:
         axi = ax[panelDict['rbspa_emfisis_wfr']]
-        zz, MLT_A, Lstar_A, MLAT_A = plot_emfisis('A', tRange[0], tRange, axi,
-            cax_emfisis_rbspa, burst_plot = plotBurst, vmax = 10**-2, vmin = 10**-10)
+        zz, MLT_A, Lstar_A, MLAT_A=plot_emfisis('A', tRange[0], emfisisTRange, axi,
+            cax_emfisis_rbspa, burst_plot=plotBurst, vmax=10**-2, vmin=10**-10)
         # Plot the EMFISIS burst data
         axi.set_ylabel('EMFISIS WFR \n frequency (Hz)')
         axi.legend_.remove() # Remove legend
     if bool(panelDict['rbspb_emfisis_wfr']+1) == True:
         axi = ax[panelDict['rbspb_emfisis_wfr']]
-        zz, MLT_B, Lstar_B, MLAT_B = plot_emfisis('B', tRange[0], tRange, axi,
+        zz, MLT_B, Lstar_B, MLAT_B=plot_emfisis('B', tRange[0], emfisisTRange, axi,
             cax_emfisis_rbspb)
         axi.set_ylabel('EMFISIS WFR \n frequency (Hz)')
         axi.legend_.remove() # Remove legen
