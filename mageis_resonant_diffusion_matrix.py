@@ -110,18 +110,24 @@ for i, ax in np.ndenumerate(axArr):
     vParallel_res = c*np.linspace(0, -0.99, num = 1000)
     mlat = mlatArr[i]
     nn = resonant_diffusion_curves.n_e(n0, mlat0, mlat, a)
+    print('Density = ', nn*1E-6)
+
+    # Calculate fce/fpe
+    wce = resonant_diffusion_curves.wce(mlat, L)
+    wpe = resonant_diffusion_curves.wpe(nn, mlat, mlat, a=a)
+
 
     # Draw resonance curves
-    # w/w_ce = 0.1 
+    # w/w_ce = 0.2
     vPerp_res = resonant_diffusion_curves.resCurveVperp(
-        vParallel_res, 0.1*resonant_diffusion_curves.wce(mlat, L), nn, mlat0, 
+        vParallel_res, 0.2*resonant_diffusion_curves.wce(mlat, L), nn, mlat0, 
         mlat, L, a=a)
     pPerp_res, pParallel_res = resonant_diffusion_curves.p(
         vPerp_res, vParallel_res)
     ax.plot(pPerp_res, pParallel_res, 'g')
     ax.plot(pPerp_res, -pParallel_res, 'g')
     label01 = mlines.Line2D([], [], color='g', markersize=15, 
-        label=r'$0.1 \ \Omega_{ce}$')
+        label=r'$0.2 \ \Omega_{ce}$')
 
     # w/w_ce = 0.4 
     vPerp_res = resonant_diffusion_curves.resCurveVperp(
@@ -140,9 +146,9 @@ for i, ax in np.ndenumerate(axArr):
         mlat0, mlat, L, a=a)
     pPerp_res, pParallel_res = resonant_diffusion_curves.p(
         vPerp_res, vParallel_res)
-    ax.plot(pPerp_res, pParallel_res, 'b')
-    ax.plot(pPerp_res, -pParallel_res, 'b')
-    label06 = mlines.Line2D([], [], color='b', markersize=15, ls='-',
+    ax.plot(pPerp_res, pParallel_res, 'w')
+    ax.plot(pPerp_res, -pParallel_res, 'w')
+    label06 = mlines.Line2D([], [], color='w', markersize=15, ls='-',
         label=r'$0.6 \ \Omega_{ce}$')
         
     #ax.legend(loc=4, handles=[label01, label04, label06], fontsize=10)
@@ -161,9 +167,11 @@ for i, ax in np.ndenumerate(axArr):
             
     ax.set(aspect='equal', ylim=(-1.2, 1.2), xlim=(0, 1.2))
         
-    mlat_str = r'$\lambda={0}^{{\circ}} \ ({1} \ cm^{{-3}})$'.format(
-        round(mlat), round(resonant_diffusion_curves.n_e(
-            n0, mlat0, mlat, a=a)*1E-6, 2))
+    # mlat_str = r'$\lambda={0}^{{\circ}} \ ({1} \ cm^{{-3}})$'.format(
+    #     round(mlat), round(resonant_diffusion_curves.n_e(
+    #         n0, mlat0, mlat, a=a)*1E-6, 2))
+    mlat_str = r'$\lambda={0}^{{\circ}}, \ f_{{pe}}/f_{{ce}} = {1}$'.format(
+        round(mlat), round((wce/wpe), 2) )
     n_extrap = r'$n_{{ext}}={0}$'.format(dictKeys[i[1]])
     n_e_str = r'$n_{{e}} = {0}$'.format(
         round(resonant_diffusion_curves.n_e(n0, mlat0, mlat, a=a)*1E-6, 2))

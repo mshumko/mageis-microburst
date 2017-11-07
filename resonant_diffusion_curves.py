@@ -23,7 +23,7 @@ wce = lambda λ, Ldip: np.abs(q_e)*magB(λ, Ldip)/m_e
 n_e = lambda n0, mlat0, mlat, a = 1: n0*(np.cos(
     np.deg2rad(mlat0))/np.cos(np.deg2rad(mlat)))**(2*a)
 # Plasma frequency, the mlat0 and a parameters is for the electron number density.
-wpe = lambda n0, mlat0, mlat, a = 1: np.sqrt(n_e(n0, mlat0, mlat, a)*q_e**2/(m_e*eps0))
+wpe = lambda n0, mlat0, mlat, a=1: np.sqrt(n_e(n0, mlat0, mlat, a)*q_e**2/(m_e*eps0))
 # Chorus |k| in a cold plama 
 magk = lambda w, n0, mlat0, mlat, Ldip: (w/c)*np.sqrt(1 - wpe(n0, mlat0, mlat)**2/(
     w*(w - wce(mlat, Ldip))))
