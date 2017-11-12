@@ -49,60 +49,19 @@ def get_mageis_params(ids):
                 
 def plot_mageis(rb_id, plotType, tRange, highrate, ax = None, Alpha = None, 
         channels = None, Nsmooth = None, cax = None, downSampleAlpha = 1, vmin=None, vmax=None):
-    fluxObj = plot_mageis_lib.magEISspectra(rb_id, tRange[0], dataLevel = 3)
-    fluxObj.tBounds = tRange
-    fluxObj.loadMagEIS(instrument = 'LOW', highrate = highrate)
+    fluxObj = plot_mageis_lib.PlotMageis(rb_id, tRange[0], 'highrate', tRange=tRange, instrument='low')
+    #fluxObj.tBounds = tRange
+    #fluxObj.loadMagEIS(instrument = 'LOW', highrate = highrate)
     
     if plotType == 't':
-        plot_mageis_timseries(rb_id, fluxObj, ax = ax, Nsmooth = Nsmooth)
-    elif plotType == 'a':
-        plot_mageis_alpha(rb_id, fluxObj, channels, ax, vmin=vmin, vmax=vmax,
-            downSampleAlpha=downSampleAlpha, cax = cax)
-        
-    return
-    
-def plot_mageis_timseries(rb_id, fluxObj, channels = None, ax = None, Nsmooth = None):
-    
-    ### GET magEIS PARAMS ###
-    fluxObj.resolveSpinTimes(flattenTime = True)
-    mageis_params = get_mageis_params(rb_id)
-    
-    if channels is None:
-        channels = range(fluxObj.magEISdata[fluxObj.fluxKey].shape[2]-3)
-        
-    if ax is not None:
-        for ch in channels:
-            flatCountsSec = fluxObj.magEISdata[fluxObj.fluxKey][:, :, ch].flatten()
-            # Smooth data with n points
-            if Nsmooth is not None:
-                kernel = np.ones(Nsmooth)/Nsmooth
-                flatCountsSec = np.convolve(kernel, flatCountsSec, mode = 'same')
-                
-            validIdf = np.where(flatCountsSec != -1E31)[0]
-            # If the entire interval is errors.
-            if len(validIdf) != len(flatCountsSec): 
-                continue
-                
-            ax.plot(fluxObj.times[validIdf], 
-                flatCountsSec[validIdf]/mageis_params['G0dE'][ch], 
-                label = '{}-{} keV'.format(mageis_params['Elow'][ch], 
-                mageis_params['Ehigh'][ch]))
-
-    # Label y-axis
-    ax.set_ylabel('MagEIS LOW electron flux \n'.format(rb_id.upper()) + \
+        ax = fluxObj.plotTimeseries(ax=ax, pltLabels=False)
+        ax.set_ylabel('MagEIS LOW electron flux \n'.format(rb_id.upper()) + \
         r'$(keV \ cm^2 \ sr \ s)^{-1}$')
-    ax.set_yscale('log')
-    return ax
-    
-def plot_mageis_alpha(rb_id, fluxObj, channel, ax, downSampleAlpha = 1, cax = None, vmin=None, vmax=None):
-    fluxObj.plotHighRateSpectra(E_ch = channel, ax = ax, 
-        downsampleAlpha = downSampleAlpha, cax=cax, pltTitle=False,
-        cmin=vmin, cmax=vmax, scatterS=40) #cax = cbar_ax[E+1]
-    mageis_params = get_mageis_params(rb_id)
-    ax.set_ylabel('MagEIS {}-{} keV\n'.format(
-        mageis_params['Elow'][channel], mageis_params['Ehigh'][channel]) +
-        r'$\alpha_{L}$ (deg)')
-
+    elif plotType == 'a':
+        ax = fluxObj.plotAlpha(ax=ax, cax=cax, cmin=vmin, cmax=vmax, E_ch=channels, pltLabels=False, scatterS=40)
+        ax.set_ylabel('MagEIS {}-{} keV\n'.format(
+            fluxObj.Elow[channels], fluxObj.Ehigh[channels]) +
+            r'$\alpha_{L}$ (deg)')  
     return ax
     
 def plot_emfisis(rb_id, date, tBounds, ax, cax, vmin = 10**-10, vmax = 10**-2, 
