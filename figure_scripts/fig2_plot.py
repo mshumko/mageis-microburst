@@ -44,9 +44,8 @@ cmax = 5E5
 rbspiceObj = plot_rbspice.plot_rbspice(rb_id, tBounds[0], tBounds=tBounds)
 rbspiceObj.loadData()
 #### Load MagEIS data
-mageisObj = plot_mageis.magEISspectra(rb_id, tBounds[0], dataLevel = 3)
-mageisObj.tBounds = tBounds
-mageisObj.loadMagEIS(instrument = 'LOW', highrate = highrate)
+mageisObj = plot_mageis.PlotMageis(rb_id, tBounds[0], 'highrate', 
+    tRange=tBounds, instrument='low')
 
 # Set up three panels to plot MagEIS timeseries around the microburst,
 # Highlight the times used for the PSD analysis, show MagEIS and RBSPICE 
@@ -61,11 +60,13 @@ for j in range(1, npanels):
 alphaCbar = fig.add_subplot(gs[1, -1])
 
 # Plot MagEIS
-t, j = mageisObj.get_resolved_flux(smooth=10) # Get flux
-for ee in range(j.shape[1]):
-    ax[0].plot(t, j[:, ee], label='{}-{} keV'.format(mageisObj.Elow[ee], mageisObj.Ehigh[ee]))
-mageisObj.plotHighRateSpectra(E_ch=0, scatterS=50, ax=ax[1], 
-    plotCb=False, pltTitle=False, pltXlabel=False, cmin=cmin, cmax=cmax, 
+t, j = mageisObj.getFluxTimeseries(smooth=10) # Get flux
+print(j.shape)
+for ee in range(j.shape[1]-1):
+    validj = np.where(j[:, ee] > 0)[0]
+    ax[0].plot(t[validj], j[validj, ee], label='{}-{} keV'.format(mageisObj.Elow[ee], mageisObj.Ehigh[ee]))
+mageisObj.plotAlpha(E_ch=0, scatterS=50, ax=ax[1], 
+    plotCb=False, pltLabels=False, cmin=cmin, cmax=cmax, 
     downSampleAlpha=5) # Alpha
 ax[0].legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
 ax[0].set(ylabel=('MagEIS-LOW electron flux \n ' + 

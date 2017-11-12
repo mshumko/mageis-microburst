@@ -31,7 +31,7 @@ m_e = 9.1E-31 # kg
 q_e = -1.6E-19 # C
 Erest = 511 # keV
 
-class PhaseSpaceDensity(plot_mageis.magEISspectra): # Utilize inheritance
+class PhaseSpaceDensity(plot_mageis.PlotMageis): # Utilize inheritance
     def __init__(self, rb_id, tRange, instrument, **kwargs):
         """
         NAME:    PhaseSpaceDensity(rb_id, times, instrument)

@@ -50,8 +50,6 @@ def get_mageis_params(ids):
 def plot_mageis(rb_id, plotType, tRange, highrate, ax = None, Alpha = None, 
         channels = None, Nsmooth = None, cax = None, downSampleAlpha = 1, vmin=None, vmax=None):
     fluxObj = plot_mageis_lib.PlotMageis(rb_id, tRange[0], 'highrate', tRange=tRange, instrument='low')
-    #fluxObj.tBounds = tRange
-    #fluxObj.loadMagEIS(instrument = 'LOW', highrate = highrate)
     
     if plotType == 't':
         ax = fluxObj.plotTimeseries(ax=ax, pltLabels=False)
