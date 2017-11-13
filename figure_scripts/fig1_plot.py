@@ -68,7 +68,7 @@ def plot_emfisis(rb_id, date, tBounds, ax, cax, vmin = 10**-10, vmax = 10**-2,
     tBounds = [tBounds[0] - timedelta(seconds = 5), tBounds[1] + timedelta(seconds = 5)]
     pObj = plot_emfisis_spectra.EMFISISspectra(rb_id, date, tBounds = tBounds)
     pObj.loadWFRSpectra()
-    pObj.loadMagEphem()
+    pObj.loadMagEphem(Bmodel='TS04D')
     pObj.plotSpectra(ax = ax, spectraMax = vmax, spectraMin = vmin, lowF = lowF, 
         grid = False, plotCb = 'vertical', cAspect = 100, cax = cax, 
         printTitle = False)
