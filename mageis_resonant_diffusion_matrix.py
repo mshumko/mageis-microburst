@@ -7,7 +7,7 @@ import numpy as np
 import os
 
 import resonant_diffusion_curves
-import mageis_diffusion_curves
+import calc_mageis_psd
 import psd_fit
 
 # Constants of nature
@@ -40,7 +40,7 @@ poptFnameDict = {'fit':'psd_fit_extrapolation_popt_111500_111650.npy',
             '4':'psd_fit_fudged_n_4_popt_111500_111700.npy'}
 
 # Load MagEIS data, calculate the PSD, and bin it to equatorial pitch angle.
-psdObj = mageis_diffusion_curves.PhaseSpaceDensity(rb_id, tBounds, instrument)
+psdObj = calc_mageis_psd.PhaseSpaceDensity(rb_id, tBounds, instrument)
 
 #psdObj.tRange = [psdObj.tRange[0] - timedelta(minutes=2), 
 #             psdObj.tRange[1] + timedelta(minutes=2)]  
