@@ -1,5 +1,5 @@
 # This script creates a matrix of Meredith style PSD plots. 
-from datetime import datetime
+from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.lines as mlines
@@ -14,8 +14,12 @@ import psd_fit
 c = 3E8 # m/s
 
 # Script parameters
-tBounds = [datetime(2017, 3, 31, 11, 17, 1), datetime(2017, 3, 31, 11, 17, 12)]
-tBounds = [datetime(2017, 3, 31, 11, 17, 3), datetime(2017, 3, 31, 11, 17, 14)]
+# tBounds = [datetime(2017, 3, 31, 11, 17, 3), 
+#            datetime(2017, 3, 31, 11, 17, 12)]
+tBounds = [datetime(2017, 3, 31, 11, 17, 3), 
+          datetime(2017, 3, 31, 11, 17, 14)]
+tBounds = [datetime(2017, 3, 31, 11, 17), 
+          datetime(2017, 3, 31, 11, 17, 11)]
 rb_id = 'A'
 instrument = 'LOW'
 mlat0 = -20 # Degrees
@@ -37,9 +41,12 @@ poptFnameDict = {'fit':'psd_fit_extrapolation_popt_111500_111650.npy',
 
 # Load MagEIS data, calculate the PSD, and bin it to equatorial pitch angle.
 psdObj = mageis_diffusion_curves.PhaseSpaceDensity(rb_id, tBounds, instrument)
+
+#psdObj.tRange = [psdObj.tRange[0] - timedelta(minutes=2), 
+#             psdObj.tRange[1] + timedelta(minutes=2)]  
 psdObj.loadData()
 psdObj.calcPsd()
-psdObj.binPsdAlpha(dataAlphaBins, psdErr = psdObj.psdErr)
+psdObj.binPsdAlpha(dataAlphaBins)
 alpha0Arr = psdObj.alpha0(psdObj.BeqOverB, dataAlphaBins)
 
 # Get the extrapolated PSD, using the fit parameters from files in the
