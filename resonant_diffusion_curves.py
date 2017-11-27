@@ -119,21 +119,25 @@ if __name__ == '__main__':
     vParallel = c*np.linspace(0, -0.99, num = 100) # m/s
     mlat = 0
     mlat00 = 0
+    N_RES = 1
     L = 4
     aa = 0
     n0 = 2.3E6 # Density (# m^-3)
 
     # Calculate and plot resutls
     plt.figure(figsize = (8, 8))
-    vPerp = resCurveVperp(vParallel, 0.1*wce(mlat, L), n0, mlat00, mlat, L, a=aa)
+    vPerp = resCurveVperp(vParallel, 0.1*wce(mlat, L), n0, mlat00, mlat, L, 
+        a=aa, n=N_RES)
     pPerp, pParallel = p(vPerp, vParallel)
     res01, = plt.plot(pPerp, -pParallel, label = r'$0.1 \ \Omega_{ce}$')
 
-    vPerp = resCurveVperp(vParallel, 0.3*wce(mlat, L), n0, mlat00, mlat, L, a=aa)
+    vPerp = resCurveVperp(vParallel, 0.3*wce(mlat, L), n0, mlat00, mlat, L, 
+        a=aa, n=N_RES)
     pPerp, pParallel = p(vPerp, vParallel)
     res03, = plt.plot(pPerp, -pParallel, label = r'$0.3 \ \Omega_{ce}$')
 
-    vPerp = resCurveVperp(vParallel, 0.6*wce(mlat, L), n0, mlat00, mlat, L, a=aa)
+    vPerp = resCurveVperp(vParallel, 0.6*wce(mlat, L), n0, mlat00, mlat, L,
+        a=aa, n=N_RES)
     pPerp, pParallel = p(vPerp, vParallel)
     res06, = plt.plot(pPerp, -pParallel, label = r'$0.6 \ \Omega_{ce}$')
 
