@@ -7,10 +7,11 @@ from datetime import datetime
 
 import spacepy.pycdf
 
+date = 20170331
 tRange = [datetime(2017, 3, 31, 11, 10), datetime(2017, 3, 31, 11, 30)]
 sc_id = 'b'
 d = spacepy.pycdf.CDF('/home/mike/research/rbsp/data/efw/rbsp{}/'
-    'rbsp{}_efw-l2_e-spinfit-mgse_20170331_v02.cdf'.format(sc_id, sc_id))
+    'rbsp{}_efw-l2_e-spinfit-mgse_{}_v02.cdf'.format(sc_id, sc_id, date))
 
 # Now filter the data by times and valid values
 validIdt = (d['epoch'][:] > tRange[0]) & (d['epoch'][:] < tRange[1])
