@@ -8,13 +8,13 @@ find_psd.py - Use the MagEphem data to look for times when RBSP was within
     a user-defined L and MLT range. The top panel shows B_l/B_sc as an 
     indicator of how far RBSP is off of the equator.
 
-figure_scripts/
-- fig1_plot.py - This script plots figure 1 for the microburst paper.
+>figure_scripts/
+>> fig1_plot.py - This script plots figure 1 for the microburst paper.
         It is pretty dissorganized since I was adding in plotting 
         functionality here and there.
-- fig2_plot.py - This scipt plots the MagEIS and RBSPICE data for figure
+>> fig2_plot.py - This scipt plots the MagEIS and RBSPICE data for figure
         2 of the microburst paper.
-- fig3_plot.py - This scipt plots the AC6 data during the RBSP-AC6 
+>> fig3_plot.py - This scipt plots the AC6 data during the RBSP-AC6 
         conjunction. The time and distance lags are hard coded since the 
         data values are errorous.
 
