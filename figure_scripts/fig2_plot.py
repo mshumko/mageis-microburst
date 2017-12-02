@@ -22,7 +22,7 @@ import fig1_plot
 import spacepy.pycdf
 
 # "Interactive time range selection."
-tKey = 'muBurst'
+tKey = 'muBurst2'
 rb_id = 'A'
 if rb_id == 'A':
     highrate = True
@@ -30,6 +30,8 @@ else:
     highrate = False
 times = {'muBurst':[datetime(2017, 3, 31, 11, 16, 40), 
                     datetime(2017, 3, 31, 11, 17, 20)],
+            'muBurst2':[datetime(2017, 3, 31, 11, 17, 20), 
+                    datetime(2017, 3, 31, 11, 18, 20)],
             'rbspb_b_peaks':[datetime(2017, 3, 31, 11, 17), 
                     datetime(2017, 3, 31, 11, 18, 30)],
             'later':[datetime(2017, 3, 31, 11, 35, 0), 
