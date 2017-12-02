@@ -2,7 +2,7 @@
 # before the March 31st, 2017 microburst observation
 
 import numpy as np
-import mageis_diffusion_curves
+import calc_mageis_psd
 import scipy.optimize
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     rb_id = 'A'
     instrument = 'LOW'
     alphaBins = np.arange(0, 180, 5)
-    psdObj = mageis_diffusion_curves.PhaseSpaceDensity(rb_id, tBounds, instrument)
+    psdObj = calc_mageis_psd.PhaseSpaceDensity(rb_id, tBounds, instrument)
     psdObj.loadData()
     psdObj.calcPsd()
     psdObj.binPsdAlpha(alphaBins, psdErr = psdObj.psdErr)

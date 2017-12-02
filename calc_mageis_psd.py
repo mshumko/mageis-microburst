@@ -81,12 +81,11 @@ class PhaseSpaceDensity(plot_mageis.PlotMageis): # Utilize inheritance
         self.instrument = instrument
 
         # Load the magEIS plotting object
-        dataLevel = kwargs.get('dataLevel', 3)
-        super().__init__(rb_id, self.tRange[0], dataLevel = dataLevel)
-        self.tBounds = self.tRange
+        plot_mageis.PlotMageis.__init__(self, rb_id, self.tRange[0], 'highrate', 
+            tRange=self.tRange, instrument='low')
         return
                 
-    def loadData(self, dataLevel = 3):
+    def loadData(self):
         """
         NAME:    loadMagEIS
         USE:     This function loads in magEIS data and 
@@ -94,42 +93,33 @@ class PhaseSpaceDensity(plot_mageis.PlotMageis): # Utilize inheritance
         INPUT:   REQUIRED:
                     None
                  OPTIONAL:
-                    remapAlpha: fold pitch angles from 0 to 360 to
-                                0 to 180 degrees.
-                    datalevel: Which level of data to load.
+                    None
 
         AUTHOR:  Mykhaylo Shumko
         RETURNS: None
         MOD:     2017-09-07
         """
+        self.times, self.j = self.getFluxTimeseries()
+        self.flatAlpha = self.magEISdata['HighRate_Alpha'][:, :1000].flatten()
+
+        # Refilter the times since initially it was calculated from the
+        # unflattened arrays and now they are flattened and could be 
+        # narrowed down more.
+        validInd = np.where((self.times > self.tRange[0]) & 
+                            (self.times < self.tRange[1]))[0]
+        self.times = self.times[validInd]
+        self.flatAlpha = self.flatAlpha[validInd]
+        self.j = self.j[validInd, :]
+
         # Widen the user time range so that a) there will be at least one magEphem
         # data point and b) so that it can be flattened, without any part of the
-        # user's time range cut off.        
-        self.tBounds = [self.tRange[0] - timedelta(minutes = 2), 
-            self.tRange[1] + timedelta(minutes = 2)]
-        
-        self.loadMagEIS(instrument = self.instrument, highrate = True)
-        
-        # Calculate the flattened time and pitch angle arrays.
-        self.resolveSpinTimes(flattenTime = True)
-        self.flatAlpha = self.magEISdata['HighRate_Alpha360'].flatten()
-
+        # user's time range cut off.      
+        self.tRange = [self.tRange[0] - timedelta(minutes=2), 
+            self.tRange[1] + timedelta(minutes=2)]  
         self.loadMagEphem()        
-        self.BeqOverB = 1/np.mean(self.magEphem['BoverBeq'])
-        
-        # Lastly, filter the flattened times and pitch angles.
-        validIdt = np.where((self.times >= self.tRange[0]) & 
-            (self.times <= self.tRange[1]) & (self.flatAlpha != -1E31))[0]
-        self.times = self.times[validIdt]
-        self.flatAlpha = self.flatAlpha[validIdt]
-
+        self.BeqOverB = 1/np.mean(self.magEphem['BoverBeq'])        
         # Equatorial pitch angle array
         self.alpha0Arr = self.alpha0(self.BeqOverB, self.flatAlpha)
-     
-        # Convert the count data into a 2d array with nEnergy, nTime
-        self.magEISdata['HighRate'] = np.array([
-            self.magEISdata['HighRate'][:, :, E_ch].flatten()[validIdt]
-            for E_ch in range(8)])
         return
         
     def calcPsd(self, lowerAlpha = None, upperAlpha = None):
@@ -137,31 +127,23 @@ class PhaseSpaceDensity(plot_mageis.PlotMageis): # Utilize inheritance
         This function calculates the phase space density, and it filters by
         pitch angle and invalid indicies
         """
-        #alpha = self.magEISdata['HighRate_Alpha360']
-        #validIda = np.where((alpha != -1E31))[0]
-        
+        # Logic to filter calculate PSD using the correct indicies.
         if lowerAlpha is not None:
             lowerIda = np.where(self.flatAlpha >= lowerAlpha)[0]
         else:
             lowerIda = range(len(self.flatAlpha))
-            
         if upperAlpha is not None:
             upperIda = np.where(self.flatAlpha <= upperAlpha)[0]
         else:
             upperIda = range(len(self.flatAlpha))
-            
         validIda = np.array(list(set(lowerIda) & set(upperIda)))
 
-        # Create data phase space density in units of c^3/(cm^6 s^3 meV^3)
-        # In addition, calculate error, assuming Poisson statistics.
-        psd = 1E9*np.array([self.f(self.j(i)[0][validIda], self.Emid[i], 
-            jErr = self.j(i)[1][validIda]) for i in range(7)]) 
-        self.psd = psd[:, 0, :]
-        self.psdErr = psd[:, 1, :]
-        return self.psd, self.psdErr
+        # Create data phase space density in units of c^3/(cm^6 s^3 meV^3).
+        self.psd = 1E9*np.array([self.f(self.j[validIda, ee], self.Emid[ee]) for ee in range(7)]) 
+        return self.psd
 
     def binPsdAlpha(self, binEdges, psdErr = None, zeroPsdFill = 0, 
-            remapAlpha = True):
+            remapAlpha=False):
         """
         NAME:    binPsdAlpha(self, binEdges, psdErr = None, zeroPsdFill = 0, 
                     remapAlpha = True)
@@ -181,15 +163,8 @@ class PhaseSpaceDensity(plot_mageis.PlotMageis): # Utilize inheritance
         RETURNS: self.alphaBinMid - Middle pitch angles from the binEdges,
                  self.meanPsd - (nE, len(binEdges)-1) array where nE is the 
                     number of energy channels.
-        MOD:     2017-10-03
+        MOD:     2017-11-27
         """
-        if remapAlpha:
-            # Fold binned and data alpha from 0 to 360 to 0 to 180.
-            binEdges = binEdges[np.where((binEdges >= 0) & 
-                (binEdges <= 180))[0]]
-            self.flatAlphaFolded = copy.copy(self.flatAlpha)
-            self.flatAlphaFolded[self.flatAlpha > 180] = (
-                -self.flatAlpha[self.flatAlpha > 180] % 180)
         self.meanPsd = np.zeros((self.psd.shape[0], len(binEdges) - 1))
         if psdErr is not None:
             self.meanPsdErr = np.zeros((self.psd.shape[0], len(binEdges) - 1))
@@ -197,8 +172,8 @@ class PhaseSpaceDensity(plot_mageis.PlotMageis): # Utilize inheritance
         
         # Loop over pitch angle bins.
         for a in range(len(binEdges[:-1])):
-            validAlpha = np.where((self.flatAlphaFolded >= binEdges[a]) & 
-                                  (self.flatAlphaFolded < binEdges[a+1]))[0] 
+            validAlpha = np.where((self.flatAlpha >= binEdges[a]) & 
+                                  (self.flatAlpha < binEdges[a+1]))[0] 
 
             # If no data points found at that equatorial pitch angle, fill in
             # the psd with a dummy variable zeroPsdFill (This avoids nan's for
@@ -208,11 +183,7 @@ class PhaseSpaceDensity(plot_mageis.PlotMageis): # Utilize inheritance
                 continue
             # Calculate mean phase space density in that bin.
             self.meanPsd[:, a] = np.mean(self.psd[:, validAlpha], axis = 1)
-            if psdErr is not None:
-                self.meanPsdErr[:, a] = np.sqrt(np.sum(
-                    psdErr[:, validAlpha]**2, axis = 1))/len(validAlpha)
         return self.alphaBinMid, self.meanPsd
-        
         
     def drawPatches(self, eqPitchAngleBins, **kwargs):
         """
@@ -339,7 +310,7 @@ class PhaseSpaceDensity(plot_mageis.PlotMageis): # Utilize inheritance
     
     # Drew's derivation of the phase space density
     @staticmethod
-    def f(j, Ek, Erest = Erest, jErr = None):
+    def f(j, Ek, Erest=Erest, jErr=None):
         psd = np.divide(j, 100*c*Ek*(Ek + 2*Erest))
         if jErr is None:
             return psd
@@ -387,10 +358,12 @@ class PhaseSpaceDensity(plot_mageis.PlotMageis): # Utilize inheritance
 
 
 if __name__ == '__main__':
-    tBoundsDict = {'q':[datetime(2017, 3, 31, 11, 15, 0), datetime(2017, 3, 31, 11, 17, 0)], 'm1':[datetime(2017, 3, 31, 11, 17, 0), datetime(2017, 3, 31, 11, 17, 20)], 'm2':[datetime(2017, 3, 31, 11, 17, 10), datetime(2017, 3, 31, 11, 17, 20)],
+    tBoundsDict = {'q':[datetime(2017, 3, 31, 11, 15, 0), datetime(2017, 3, 31, 11, 17, 0)], 
+    'm1':[datetime(2017, 3, 31, 11, 17, 0), datetime(2017, 3, 31, 11, 17, 20)], 
+    'm2':[datetime(2017, 3, 31, 11, 17), datetime(2017, 3, 31, 11, 17, 11)],
     'bigOne':[datetime(2017, 3, 31, 11, 17, 13), datetime(2017, 3, 31, 11, 17, 18)],
     'smallOne':[datetime(2017, 3, 31, 11, 17, 9, 500000), datetime(2017, 3, 31, 11, 17, 10, 500000)]}
-    tPeriod = 'm1'
+    tPeriod = 'm2'
 
     tBounds = tBoundsDict[tPeriod]
     
@@ -408,7 +381,7 @@ if __name__ == '__main__':
     psdObj.loadData()
     psdObj.calcPsd()
     alphaBins = alphaBins[np.where(alphaBins < 180)[0]]
-    psdObj.binPsdAlpha(alphaBins, psdErr = psdObj.psdErr)
+    psdObj.binPsdAlpha(alphaBins)
     plotPitchAngles = False
     plotMeredithPlot = True
     saveMeredithPlt = False
@@ -464,7 +437,7 @@ if __name__ == '__main__':
         psdPlt.text(0.2, 0.9,'{} pt smooth'.format(da), 
             horizontalalignment='center', verticalalignment='center',
             transform=psdPlt.transAxes, color = 'w')
-    alphaPlt.set(xlabel = 'UTC', ylabel = 'Local Pitch angle', ylim = (0, 360))
+    alphaPlt.set(xlabel = 'UTC', ylabel = 'Local Pitch angle', ylim = (0, 180))
     alphaPlt.scatter(psdObj.times, psdObj.flatAlpha)
 
     psdPlt.set_yscale('log')
@@ -484,7 +457,8 @@ if __name__ == '__main__':
             extPsd[e, :] = psd_fit.sinAlpha(alphaBins, popt[e, 0], popt[e, 1])
             
         # Draw the extrapolarted patches
-        ax, p = psdObj.drawPatches(alphaBins, ax = polarPsdPlt, psd = extPsd)
+        ax, p = psdObj.drawPatches(alphaBins, ax=polarPsdPlt, psd=extPsd,
+            cMapLog=False)
         
         # Find the index where the alpha0Arr jumps (largest pitch angle sampled)
         ida = np.where(np.abs(np.convolve(alpha0Arr, [-1, 1])) > 10)[0][0]
@@ -499,7 +473,7 @@ if __name__ == '__main__':
         
         polarPsdPlt.plot(n_perp, n_parallel, 'w:')
         polarPsdPlt.plot(s_perp, s_parallel, 'w:') 
-    ax, p = psdObj.drawPatches(alpha0Arr, ax = polarPsdPlt)
+    ax, p = psdObj.drawPatches(alpha0Arr, ax=polarPsdPlt, cMapLog=False)
     cb = plt.colorbar(p, label = r'PSD $c^3/(cm \ MeV)^3$')    
     
 

@@ -15,8 +15,8 @@ import exp_fit
 SC_ID = 'A'
 SMOOTH = None
 INSTRUMENT = 'LOW'
-A_WIDTH = 0.5
-BURST_THRESH = 100
+#A_WIDTH = 0.5
+#BURST_THRESH = 100
 DATE = datetime(2017, 3, 31)
 T_BOUNDS = [datetime(2017, 3, 31, 11, 17, 0), datetime(2017, 3, 31, 11, 17, 16)]
 T_LIM = [datetime(2017, 3, 31, 11, 17, 9), datetime(2017, 3, 31, 11, 17, 13)]
