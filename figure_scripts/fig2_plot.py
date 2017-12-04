@@ -22,7 +22,7 @@ import fig1_plot
 import spacepy.pycdf
 
 # "Interactive time range selection."
-tKey = 'muBurst2'
+tKey = 'muBurst'
 rb_id = 'A'
 if rb_id == 'A':
     highrate = True
