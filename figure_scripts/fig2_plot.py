@@ -71,7 +71,7 @@ mageisObj.plotAlpha(E_ch=0, scatterS=50, ax=ax[1],
     plotCb=False, pltLabels=False, cmin=cmin, cmax=cmax, 
     downSampleAlpha=5) # Alpha
 ax[0].legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
-ax[0].set(ylabel=('MagEIS-LOW electron flux \n ' + 
+ax[0].set(ylabel=('MagEIS-A J \n ' + 
     r'$(cm^2 \ sr \ s \ keV)^{-1}$'), yscale='log')
 
 # plot RBSPICE
