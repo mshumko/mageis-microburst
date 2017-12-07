@@ -74,6 +74,24 @@ ax[0].legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
 ax[0].set(ylabel=('MagEIS-A J \n ' + 
     r'$(cm^2 \ sr \ s \ keV)^{-1}$'), yscale='log')
 
+# Plot arrow to microbursts
+# Arrow params
+t = np.array([datetime(2017, 3, 31, 11, 17, 9, 777000),
+            datetime(2017, 3, 31, 11, 17, 10, 250000),
+            datetime(2017, 3, 31, 11, 17, 10, 860000),
+            datetime(2017, 3, 31, 11, 17, 11, 500000)])
+j = np.array([
+    [2E5, 1E6], [2E5, 1E6], [2E5, 1E6], [3E5, 1E6]
+])
+
+for (tt, jj) in zip(t, j):
+    ax[0].annotate('',
+            xy=(mdates.date2num(tt), jj[0]), xycoords='data',
+            xytext=(mdates.date2num(tt), jj[1]), textcoords='data',
+            arrowprops=dict(arrowstyle="->",
+                            connectionstyle="arc3"),
+            )
+
 # plot RBSPICE
 ax[1], p = rbspiceObj.plotTelecopeAlphaScatter(range(6, 12), ax=ax[1], 
     cmin=cmin, cmax=cmax, telescopes=range(4), Elabel=False, plotColorbar=False)
