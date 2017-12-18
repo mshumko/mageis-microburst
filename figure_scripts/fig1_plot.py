@@ -82,8 +82,8 @@ def plot_emfisis(rb_id, date, tBounds, ax, cax, vmin = 10**-10, vmax = 10**-2,
 if __name__ == '__main__':
     ### TOP LEVEL USER INPUT ###
     zoomedT = False
-    plotBurst = False
-    savePlot = True
+    plotBurst = True
+    savePlot = False
     tKey = 'muBurst'
     times = {'muBurst':[datetime(2017, 3, 31, 11, 15, 0), datetime(
                         2017, 3, 31, 11, 18, 10)],
