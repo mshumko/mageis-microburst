@@ -1,6 +1,7 @@
 # This script creates a matrix of Meredith style PSD plots. 
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
+import matplotlib.patches
 import matplotlib.gridspec as gridspec
 import matplotlib.lines as mlines
 import numpy as np
@@ -123,7 +124,6 @@ for i, ax in np.ndenumerate(axArr):
     wce = resonant_diffusion_curves.wce(mlat, L)
     wpe = resonant_diffusion_curves.wpe(nn, mlat, mlat, a=a)
 
-
     # Draw resonance curves
     # w/w_ce = 0.2
     vPerp_res = resonant_diffusion_curves.resCurveVperp(
@@ -195,6 +195,13 @@ for ii, ax in np.ndenumerate(axArr[:-1, :]):
     axArr[ii].set_xticklabels([])
 for ax in axArr[-1, :]: # Throw on more x ticks.
     ax.set_xticks([0, 0.5, 1])
+
+# Plot circle around microburst PSD
+for ii, ax in np.ndenumerate(axArr):
+    # Need circle in for loop... matplotlib is werid
+    circle = matplotlib.patches.Circle((0.122, 0.3425), radius=0.1, color='w',
+        fill=False, lw=2)
+    ax.add_patch(circle)
         
 fig.suptitle('RBSP-{} MagEIS LOW phase space density for {} \n {} - {} UT'.format(rb_id, 
     tBounds[0].date(), tBounds[0].strftime("%H:%M:%S"), 
