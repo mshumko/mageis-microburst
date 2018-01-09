@@ -17,10 +17,10 @@ c = 3E8 # m/s
 # Script parameters
 # tBounds = [datetime(2017, 3, 31, 11, 17, 3), 
 #            datetime(2017, 3, 31, 11, 17, 12)]
-tBounds = [datetime(2017, 3, 31, 11, 17, 3), 
-          datetime(2017, 3, 31, 11, 17, 14)]
-tBounds = [datetime(2017, 3, 31, 11, 17), 
-          datetime(2017, 3, 31, 11, 17, 11)]
+tBounds = [datetime(2017, 3, 31, 11, 17, 2), 
+          datetime(2017, 3, 31, 11, 17, 13)]
+# tBounds = [datetime(2017, 3, 31, 11, 17), 
+#           datetime(2017, 3, 31, 11, 17, 11)]
 rb_id = 'A'
 instrument = 'LOW'
 mlat0 = -20 # Degrees
@@ -203,7 +203,7 @@ for ii, ax in np.ndenumerate(axArr):
         fill=False, lw=2)
     ax.add_patch(circle)
         
-fig.suptitle('RBSP-{} MagEIS LOW phase space density for {} \n {} - {} UT'.format(rb_id, 
+fig.suptitle('RBSP-{} MagEIS LOW | phase space density | {} \n {} - {} UT'.format(rb_id, 
     tBounds[0].date(), tBounds[0].strftime("%H:%M:%S"), 
     tBounds[1].strftime("%H:%M:%S")))
 fig.text(0.5, 0.01, r'$p_{\perp}/m_e c$', ha='center')

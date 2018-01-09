@@ -188,9 +188,9 @@ if __name__ == '__main__':
     for a in ax[0:2]:
         a.axvline(datetime(2017, 3, 31, 11, 15, 0), c='k')
         a.axvline(datetime(2017, 3, 31, 11, 16,50), c='k')
-        a.axvline(datetime(2017, 3, 31, 11, 17, 3), c='k',
+        a.axvline(datetime(2017, 3, 31, 11, 17, 2), c='k',
             ls='--')
-        a.axvline(datetime(2017, 3, 31, 11, 17, 14), c='k',
+        a.axvline(datetime(2017, 3, 31, 11, 17, 13), c='k',
             ls='--')        
     # Format the time axis
     #if zoomedT:

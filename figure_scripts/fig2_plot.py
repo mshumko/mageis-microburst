@@ -127,13 +127,13 @@ for i, a in enumerate(ax):
             color=abcColors[i])     
     
 # Draw vertical lines to show the resonant diffusion analysis time range.
-ax[0].axvline(datetime(2017, 3, 31, 11, 17, 3), c='k',
+ax[0].axvline(datetime(2017, 3, 31, 11, 17, 2), c='k',
     ls='--')
-ax[0].axvline(datetime(2017, 3, 31, 11, 17, 14), c='k',
+ax[0].axvline(datetime(2017, 3, 31, 11, 17, 13), c='k',
     ls='--')
-ax[-1].axvline(datetime(2017, 3, 31, 11, 17, 3), c='w',
+ax[-1].axvline(datetime(2017, 3, 31, 11, 17, 2), c='w',
     ls='--')
-ax[-1].axvline(datetime(2017, 3, 31, 11, 17, 14), c='w',
+ax[-1].axvline(datetime(2017, 3, 31, 11, 17, 13), c='w',
     ls='--')
 if tKey == 'muBurst':
     print(tBounds[0] - timedelta(seconds=6))

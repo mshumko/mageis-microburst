@@ -8,9 +8,9 @@ from datetime import datetime
 def plotDavesBurstSpectra(tRange = None, vmin = None, vmax = None, ax = None, lowF = 10):
 
     # Load Dave's data
-    times = np.load('../data/emfisis_burst_times.npy')
-    spectra = np.load('../data/emfisis_burst_spectra.npy')
-    frequencies = 1000*np.load('../data/emfisis_burst_frequencies.npy')
+    times = np.load('/home/mike/research/mageis-microburst/data/emfisis_burst_times.npy')
+    spectra = np.load('/home/mike/research/mageis-microburst/data/emfisis_burst_spectra.npy')
+    frequencies = 1000*np.load('/home/mike/research/mageis-microburst/data/emfisis_burst_frequencies.npy')
 
     if ax is None:
         fig = plt.figure(figsize=(15, 10), dpi=80, facecolor = 'w')
