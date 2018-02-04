@@ -24,12 +24,14 @@ tBounds = [datetime(2017, 3, 31, 11, 17, 2),
 rb_id = 'A'
 instrument = 'LOW'
 mlat0 = -20 # Degrees
-n0 = 0.5E6 # e-/cm^3
+n0 = 1.0E6 # e-/cm^3
 L = 5.7
 a = -1 # Electron number density power law coefficient.
 mlats = [0, 20, 30]
 # Fraction of the cyclotron frequency to draw the diffusion curves.
 diffFraction = 0.4 
+
+PANEL_LABELS = True
 
 dataAlphaBins = np.arange(0, 180, 5)
 extrapAlphaBins = np.arange(30, 150, 5)
@@ -177,14 +179,29 @@ for i, ax in np.ndenumerate(axArr):
     # mlat_str = r'$\lambda={0}^{{\circ}} \ ({1} \ cm^{{-3}})$'.format(
     #     round(mlat), round(resonant_diffusion_curves.n_e(
     #         n0, mlat0, mlat, a=a)*1E-6, 2))
-    mlat_str = r'$\lambda={0}^{{\circ}}, \ f_{{pe}}/f_{{ce}} = {1}$'.format(
-        round(mlat), round((wce/wpe), 2) )
-    n_extrap = r'$n_{{ext}}={0}$'.format(dictKeys[i[1]])
-    n_e_str = r'$n_{{e}} = {0}$'.format(
-        round(resonant_diffusion_curves.n_e(n0, mlat0, mlat, a=a)*1E-6, 2))
-    ax.text(1, 1, mlat_str + ', '+ n_extrap, horizontalalignment='right', 
-        verticalalignment='top', transform=ax.transAxes, color='k', 
-        fontsize=12, bbox=dict(facecolor='w', boxstyle="round"))
+    # mlat_str = r'$\lambda={0}^{{\circ}}, \ f_{{pe}}/f_{{ce}} = {1}$'.format(
+    #     round(mlat), round((wce/wpe), 2) )
+    # n_extrap = r'$n_{{ext}}={0}$'.format(dictKeys[i[1]])
+    # n_e_str = r'$n_{{e}} = {0}$'.format(
+    #    round(resonant_diffusion_curves.n_e(n0, mlat0, mlat, a=a)*1E-6, 2))
+    # ax.text(1, 1, mlat_str + ', '+ n_extrap, horizontalalignment='right', 
+    #     verticalalignment='top', transform=ax.transAxes, color='k', 
+    #     fontsize=12, bbox=dict(facecolor='w', boxstyle="round"))
+    annotStr = (r'$\lambda={0}^{{\circ}}$'.format(round(mlat)) + '\n'
+        r'$n_{{ext}}={0}$'.format(dictKeys[i[1]]) + '\n' +
+        r'$f_{{pe}}/f_{{ce}} = {0}$'.format(round((wce/wpe), 2)))
+    #n_extrap = r'$n_{{ext}}={0}$'.format(dictKeys[i[1]])
+    ax.text(1, 0.99, annotStr, horizontalalignment='right', 
+        verticalalignment='top', transform=ax.transAxes, color='w')
+
+# Plot the panel labels
+if PANEL_LABELS:
+    labels = [['a', 'b', 'c', 'd'], ['e', 'f', 'g', 'h']]
+    for (i, j), ax in np.ndenumerate(axArr):
+        ax.text(0, 0.95, '({})'.format(labels[i][j].upper()), 
+            transform=ax.transAxes, color='w')
+
+
         
 # Turn off the subplot's ticklabels   
 for ii, ax in np.ndenumerate(axArr):
