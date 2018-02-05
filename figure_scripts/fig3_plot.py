@@ -1,86 +1,232 @@
-# This script generates the Figure 2 plot with AC-6 data.
+# This script creates a matrix of Meredith style PSD plots. 
 from datetime import datetime, timedelta
-import sys
-import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.patches
+import matplotlib.gridspec as gridspec
+import matplotlib.lines as mlines
+import numpy as np
+import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import resonant_diffusion_curves
+import calc_mageis_psd
+import psd_fit
 
-sys.path.insert(0, '/home/mike/research/mission-tools/ac6')
-import read_ac_data
+# Constants of nature
+c = 3E8 # m/s
 
-date = datetime(2017, 3, 31)
-tRange = [datetime(2017, 3, 31, 11, 18), datetime(2017, 3, 31, 11, 20, 21)]
-dataA = read_ac_data.read_ac_data_wrapper('a', date, dType = '10Hz', tRange = tRange)
-dataB = read_ac_data.read_ac_data_wrapper('b', date, dType = '10Hz', tRange = tRange)
+# Script parameters
+# tBounds = [datetime(2017, 3, 31, 11, 17, 3), 
+#            datetime(2017, 3, 31, 11, 17, 12)]
+tBounds = [datetime(2017, 3, 31, 11, 17, 2), 
+          datetime(2017, 3, 31, 11, 17, 13)]
+# tBounds = [datetime(2017, 3, 31, 11, 17), 
+#           datetime(2017, 3, 31, 11, 17, 11)]
+rb_id = 'A'
+instrument = 'LOW'
+mlat0 = -20 # Degrees
+n0 = 1.0E6 # e-/cm^3
+L = 5.7
+a = -1 # Electron number density power law coefficient.
+mlats = [0, 20, 30]
+# Fraction of the cyclotron frequency to draw the diffusion curves.
+diffFraction = 0.4 
+
+PANEL_LABELS = True
+
+dataAlphaBins = np.arange(0, 180, 5)
+extrapAlphaBins = np.arange(30, 150, 5)
+vmax = 10**-1
+vmin = 10**-4
+poptFnameDict = {'fit':'psd_fit_extrapolation_popt_111500_111650.npy',
+            '1':'psd_fit_fudged_n_1_popt_111500_111700.npy',
+            '2':'psd_fit_fudged_n_2_popt_111500_111700.npy',
+            '4':'psd_fit_fudged_n_4_popt_111500_111700.npy'}
+
+# Load MagEIS data, calculate the PSD, and bin it to equatorial pitch angle.
+psdObj = calc_mageis_psd.PhaseSpaceDensity(rb_id, tBounds, instrument)
+
+#psdObj.tRange = [psdObj.tRange[0] - timedelta(minutes=2), 
+#             psdObj.tRange[1] + timedelta(minutes=2)]  
+psdObj.loadData()
+psdObj.calcPsd()
+psdObj.binPsdAlpha(dataAlphaBins)
+alpha0Arr = psdObj.alpha0(psdObj.BeqOverB, dataAlphaBins)
+
+# Get the extrapolated PSD, using the fit parameters from files in the
+# poptFnameDict
+dir_path = os.path.dirname(os.path.realpath(__file__)) # Script dir
+popDict = {}
+for key in poptFnameDict.keys():
+    popDict[key] = np.load(os.path.join(dir_path, '..', 'data', poptFnameDict[key]))
     
-tLag = 10.4 # s
-dLag = 78.1 # km
+extPsd = np.nan*np.ones((7, len(extrapAlphaBins), len(poptFnameDict.keys())),
+    dtype=float) 
 
-fig = plt.figure(figsize=(15, 10), dpi = 80, facecolor = 'white')
+# Sort the dictionary keys so that the first key is the fit, and then the 
+# extrapolations in ascending order
+dictKeys = sorted(poptFnameDict.keys())
+dictKeys.remove('fit')
+dictKeys.insert(0, 'fit')
+
+# Now save the extrapolated PSD values over the extrapolated pitch angles.
+for i_n, nKey in enumerate(dictKeys):
+    for e in range(7):
+        extPsd[e, :, i_n] = psd_fit.sinAlpha(extrapAlphaBins, popDict[nKey][e, 0],
+            popDict[nKey][e, 1])
+
+# Find the index where the alpha0Arr jumps (largest pitch angle sampled)
+ida = np.where(np.abs(np.convolve(alpha0Arr, [-1, 1])) > 10)[0][0]
+
+# Draw straight lines representing the trapped edges of the real data
+n_perp =  psdObj.p_perp(np.linspace(0, psdObj.Ehigh[-1]), alpha0Arr[ida-1]) 
+n_parallel =  psdObj.p_parallel(np.linspace(0, psdObj.Ehigh[-1]), 
+    alpha0Arr[ida-1])
+s_perp =  psdObj.p_perp(np.linspace(0, psdObj.Ehigh[-1]), alpha0Arr[ida])
+s_parallel =  psdObj.p_parallel(np.linspace(0, psdObj.Ehigh[-1]), 
+    alpha0Arr[ida]) 
+
+################
+### PLOTTING ###
+################
+nRows = 2
+nCols = 4
+dCols = 10
+fig = plt.figure(figsize=(13, 11), dpi = 80, facecolor = 'white')
+#fig = plt.figure(figsize=(13, 13), dpi = 80, facecolor = 'white')
 plt.rcParams.update({'font.size': 15})
-gs = matplotlib.gridspec.GridSpec(2, 1)
-sTplt = fig.add_subplot(gs[0, 0], facecolor='w')
-sPplt = fig.add_subplot(gs[1, 0], facecolor='w') #, sharex = sTplt
-posPlt = sPplt.twinx()
+gs = gridspec.GridSpec(nRows, dCols*nCols+2)
+gs.update(wspace=0, hspace=0.05)
+axArr = np.nan*np.ones((nRows, nCols), dtype = object)
+for (ir, ic), ax in np.ndenumerate(axArr):
+    axArr[ir, ic] = fig.add_subplot(gs[ir, ic*dCols:(ic+1)*dCols], facecolor='k')
+colorAx = fig.add_subplot(gs[:, -2:], facecolor='k')
 
-# Plot the unshifted dos rate data.
-validIda = np.where(dataA['dos1rate'] != -1E31)[0]
-validIdb = np.where(dataB['dos1rate'] != -1E31)[0]
-sTplt.plot(dataA['dateTime'][validIda], dataA['dos1rate'][validIda], 'r',
-    label = 'AC6-A dos1rate')
-sTplt.plot(dataB['dateTime'][validIdb], dataB['dos1rate'][validIdb], 'b',
-    label = 'AC6-B dos1rate')
-###sTplt.plot(dataA['dateTime'][validIda], dataA['dos2rate'][validIda], 'r:',
-###    label = 'AC6-A dos2rate')
-###sTplt.plot(dataB['dateTime'][validIdb], dataB['dos2rate'][validIdb], 'b:',
-###    label = 'AC6-B dos2rate')
-###sTplt.plot(dataA['dateTime'][validIda], dataA['dos3rate'][validIda], 'r--',
-###    label = 'AC6-A dos2rate')
-###sTplt.plot(dataB['dateTime'][validIdb], dataB['dos3rate'][validIdb], 'b--',
-###    label = 'AC6-B dos2rate')
-    
-# Plot the time shifted dos rates.
-shiftedTimes = [t + timedelta(seconds = tLag) for t in dataA['dateTime'][validIda]]
+mlatArr = np.meshgrid(np.ones(nCols), mlats)[1]
+#mlatArr = np.array([[0, 0, 0, 0], [10, 10, 10, 10], [20, 20, 20, 20]])
 
-sPplt.plot(shiftedTimes, dataA['dos1rate'][validIda], 'r',
-    label = 'AC6-A dos1rate')
-sPplt.plot(dataB['dateTime'][validIdb], dataB['dos1rate'][validIdb], 'b',
-    label = 'AC6-B dos1rate')
-    
-# Plot spacecraft positions
-validPos = np.where(dataB['Lm_OPQ'] != -1E31)[0]
-posPlt.plot(dataB['dateTime'][validPos], dataB['Lm_OPQ'][validPos], 'k', 
-    label = 'AC6-B Lm_OPQ')
-    
-# Set all of the subplot parameters here
-sTplt.set(yscale = 'log', ylabel = 'counts/s', 
-    xlim = (datetime(2017, 3, 31, 11, 19), datetime(2017, 3, 31, 11, 20, 20)) )
-sPplt.set(yscale = 'log', ylabel = 'counts/s', xlabel = 'UTC', 
-    xlim = (datetime(2017, 3, 31, 11, 19), datetime(2017, 3, 31, 11, 20, 20)) )
-posPlt.set(ylim = (4, 7.5), ylabel = 'McIlwain L (black)')
+for i, ax in np.ndenumerate(axArr):
+    # Draw the extrapolarted patches
+    zzz, p = psdObj.drawPatches(extrapAlphaBins, ax=ax, psd=extPsd[:, :, i[1]], 
+        vmin=vmin, vmax=vmax, cMapLog=False)
+    # Draw the edges of the data and extrapolation
+    ax.plot(n_perp, n_parallel, 'w:')
+    ax.plot(s_perp, s_parallel, 'w:') 
+    # Draw the PSD data.
+    ax, p = psdObj.drawPatches(alpha0Arr, ax = ax, vmin=vmin, vmax=vmax,
+        cMapLog=False)
+    cb = plt.colorbar(p, label=r'PSD $c^3/(cm \ MeV)^3$', cax=colorAx) 
 
-sTplt.text(0.05, 0.9,'MLT = {}'.format(round(np.mean(dataA['MLT_OPQ']))), 
-    horizontalalignment='left', verticalalignment='top',
-    transform = sTplt.transAxes, color = 'k')
+    # Resonant-diffusion parameters
+    vParallel_res = c*np.linspace(0, -0.99, num = 1000)
+    mlat = mlatArr[i]
+    nn = resonant_diffusion_curves.n_e(n0, mlat0, mlat, a)
+    print('Density = ', nn*1E-6)
 
-sPplt.text(0.05, 0.9,'AC6-A shifted by {} s\nin-track separation {} km'.format(tLag, dLag), 
-    horizontalalignment='left', verticalalignment='top',
-    transform = sPplt.transAxes, color = 'k')
+    # Calculate fce/fpe
+    wce = resonant_diffusion_curves.wce(mlat, L)
+    wpe = resonant_diffusion_curves.wpe(nn, mlat, mlat, a=a)
 
-abcLabels = ['(a)', '(b)']
-abcColors = ['k', 'k']
-for i, a in enumerate([sTplt, sPplt]):
-    a.xaxis.set_minor_locator(matplotlib.dates.SecondLocator())
-    a.xaxis.set_tick_params(which = 'minor', width = 2, length = 5)
-    a.xaxis.set_tick_params(which = 'major', width = 2, length = 15)
-    a.text(0.05, 0.95, abcLabels[i], transform=a.transAxes, va='top', 
-            color=abcColors[i])     
+    # Draw resonance curves
+    # w/w_ce = 0.2
+    vPerp_res = resonant_diffusion_curves.resCurveVperp(
+        vParallel_res, 0.2*resonant_diffusion_curves.wce(mlat, L), nn, mlat0, 
+        mlat, L, a=a)
+    pPerp_res, pParallel_res = resonant_diffusion_curves.p(
+        vPerp_res, vParallel_res)
+    ax.plot(pPerp_res, pParallel_res, 'g')
+    ax.plot(pPerp_res, -pParallel_res, 'g')
+    label01 = mlines.Line2D([], [], color='g', markersize=15, 
+        label=r'$0.2 \ \Omega_{ce}$')
 
-plt.setp(sPplt.xaxis.get_majorticklabels(), rotation=30, ha='right')
-plt.setp(sTplt.get_xticklabels(), visible=False)
+    # w/w_ce = 0.4 
+    vPerp_res = resonant_diffusion_curves.resCurveVperp(
+        vParallel_res, 0.4*resonant_diffusion_curves.wce(mlat, L), nn, mlat0,
+        mlat, L, a=a)
+    pPerp_res, pParallel_res = resonant_diffusion_curves.p(
+        vPerp_res, vParallel_res)
+    ax.plot(pPerp_res, pParallel_res, 'r')
+    ax.plot(pPerp_res, -pParallel_res, 'r')
+    label04 = mlines.Line2D([], [], color='r', markersize=15, ls='-',
+        label=r'$0.4 \ \Omega_{ce}$')
 
-sTplt.legend(loc = 1)
-posPlt.set_ylim(top=8)
-gs.tight_layout(fig)
-plt.savefig('fig2.pdf')
+    # w/w_ce = 0.6
+    vPerp_res = resonant_diffusion_curves.resCurveVperp(
+        vParallel_res, 0.6*resonant_diffusion_curves.wce(mlat, L), nn, 
+        mlat0, mlat, L, a=a)
+    pPerp_res, pParallel_res = resonant_diffusion_curves.p(
+        vPerp_res, vParallel_res)
+    ax.plot(pPerp_res, pParallel_res, 'w')
+    ax.plot(pPerp_res, -pParallel_res, 'w')
+    label06 = mlines.Line2D([], [], color='w', markersize=15, ls='-',
+        label=r'$0.6 \ \Omega_{ce}$')
+        
+    #ax.legend(loc=4, handles=[label01, label04, label06], fontsize=10)
+
+    Earr = psdObj.Emid
+    vParallel_diff = vParallel_res
+
+    for e in Earr[::2]:
+        vPerp_diff = resonant_diffusion_curves.diffCurveVperp(
+            vParallel_diff, diffFraction*resonant_diffusion_curves.wce(mlat, L), 
+            n0, mlat0, mlat, L, e, a=a)
+        pPerp_diff, pParallel_diff = resonant_diffusion_curves.p(vPerp_diff, 
+            vParallel_diff)
+        ax.plot(pPerp_diff, pParallel_diff, 'c--')
+        ax.plot(pPerp_diff, -pParallel_diff, 'c--')
+            
+    ax.set(aspect='equal', ylim=(-1.2, 1.2), xlim=(0, 1.2))
+        
+    # mlat_str = r'$\lambda={0}^{{\circ}} \ ({1} \ cm^{{-3}})$'.format(
+    #     round(mlat), round(resonant_diffusion_curves.n_e(
+    #         n0, mlat0, mlat, a=a)*1E-6, 2))
+    # mlat_str = r'$\lambda={0}^{{\circ}}, \ f_{{pe}}/f_{{ce}} = {1}$'.format(
+    #     round(mlat), round((wce/wpe), 2) )
+    # n_extrap = r'$n_{{ext}}={0}$'.format(dictKeys[i[1]])
+    # n_e_str = r'$n_{{e}} = {0}$'.format(
+    #    round(resonant_diffusion_curves.n_e(n0, mlat0, mlat, a=a)*1E-6, 2))
+    # ax.text(1, 1, mlat_str + ', '+ n_extrap, horizontalalignment='right', 
+    #     verticalalignment='top', transform=ax.transAxes, color='k', 
+    #     fontsize=12, bbox=dict(facecolor='w', boxstyle="round"))
+    annotStr = (r'$\lambda={0}^{{\circ}}$'.format(round(mlat)) + '\n'
+        r'$n_{{ext}}={0}$'.format(dictKeys[i[1]]) + '\n' +
+        r'$f_{{pe}}/f_{{ce}} = {0}$'.format(round((wce/wpe), 2)))
+    #n_extrap = r'$n_{{ext}}={0}$'.format(dictKeys[i[1]])
+    ax.text(1, 0, annotStr, horizontalalignment='right', 
+        verticalalignment='bottom', transform=ax.transAxes, color='w')
+
+# Plot the panel labels
+if PANEL_LABELS:
+    labels = [['a', 'b', 'c', 'd'], ['e', 'f', 'g', 'h']]
+    for (i, j), ax in np.ndenumerate(axArr):
+        ax.text(0, 0.95, '({})'.format(labels[i][j].upper()), 
+            transform=ax.transAxes, color='w', ha='left')
+ 
+# Turn off the subplot's ticklabels   
+for ii, ax in np.ndenumerate(axArr):
+    if ii[1] == 0: # Can't figure out how to slide the array correctly...
+        continue
+    axArr[ii].set_yticklabels([])
+for ii, ax in np.ndenumerate(axArr[:-1, :]):
+    axArr[ii].set_xticklabels([])
+for ax in axArr[-1, :]: # Throw on more x ticks.
+    ax.set_xticks([0, 0.5, 1])
+
+# Plot circle around microburst PSD
+for ii, ax in np.ndenumerate(axArr):
+    # Need circle in for loop... matplotlib is werid
+    circle = matplotlib.patches.Circle((0.122, 0.3425), radius=0.1, color='w',
+        fill=False, lw=2)
+    ax.add_patch(circle)
+        
+fig.suptitle('RBSP-{} MagEIS LOW | phase space density | {} \n {} - {} UT'.format(rb_id, 
+    tBounds[0].date(), tBounds[0].strftime("%H:%M:%S"), 
+    tBounds[1].strftime("%H:%M:%S")))
+fig.text(0.5, 0.01, r'$p_{\perp}/m_e c$', ha='center')
+fig.text(0.01, 0.5, r'$p_{\parallel}/m_e c$', va='center', rotation='vertical')
+
+gs.tight_layout(fig, h_pad = 0, w_pad = 0, rect=[0.02, 0.03, 1, 0.95])
+#plt.savefig('resonance_diffusion_matrix_{0}_{1}_n0_{2}_a_{3}.png'.format(
+#    tBounds[0].strftime("%H:%M:%S"), tBounds[1].strftime("%H:%M:%S"), 
+#p     str(n0*1E-6).replace('.', '-'), a), dpi=100)
 plt.show()
