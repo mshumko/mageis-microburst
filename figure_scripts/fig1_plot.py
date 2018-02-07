@@ -248,7 +248,7 @@ if __name__ == '__main__':
 ######            plt.savefig('fig2.pdf')
 ######            plt.savefig('fig2.png', dpi = 200)
 ######        else:
-###        plt.savefig('fig1.pdf')
+    #plt.savefig('fig1.pdf', dpi=80)
 ###        plt.savefig('fig1.png', dpi = 200)
     plt.show()
 
