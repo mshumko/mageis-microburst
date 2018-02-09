@@ -53,7 +53,7 @@ def plot_mageis(rb_id, plotType, tRange, highrate, ax = None, Alpha = None,
     
     if plotType == 't':
         ax = fluxObj.plotTimeseries(ax=ax, pltLabels=False)
-        ax.set_ylabel('MagEIS LOW electron flux \n'.format(rb_id.upper()) + \
+        ax.set_ylabel(r'MagEIS LOW J' + '\n' + \
         r'$(keV \ cm^2 \ sr \ s)^{-1}$')
     elif plotType == 'a':
         ax = fluxObj.plotAlpha(ax=ax, cax=cax, cmin=vmin, cmax=vmax, E_ch=channels, pltLabels=False, scatterS=40)
