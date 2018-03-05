@@ -42,9 +42,11 @@ class Proc_L0_RBSPICE:
 if __name__ == '__main__':
     tRange = [datetime(2017, 3, 31, 11), datetime(2017, 3, 31, 11, 18)]
     obj = Proc_L0_RBSPICE(('/home/mike/research/rbsp/data/rbspice/rbspa/'
-                        'rbsp-a-rbspice_lev-0_EBR_20170331_v1.1.2-01'),
+                        'rbsp-a-rbspice_lev-1_EBR_20170331_v1.1.2-01'),
                         tRange=None)
 
-    for SSD in obj.d['SSDs'].T:
+    #print(obj.d.keys())
+
+    for SSD in obj.d['EBR'].T:
         plt.plot(obj.d['Epoch'], SSD)
     plt.show()
