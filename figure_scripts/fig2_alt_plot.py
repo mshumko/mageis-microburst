@@ -101,6 +101,7 @@ d = spacepy.pycdf.CDF('/home/mike/research/rbsp/data/rbspice/rbspa/'
 idT = np.where((tBounds[0] < np.array(d['Epoch'][:])) & 
                     (tBounds[1] > np.array(d['Epoch'][:])))[0]
 for (i, EBR) in enumerate(np.array(d['EBR']).T):
+    print(i)
     ax[0].plot(np.array(d['Epoch'])[idT], np.array(EBR[idT]), label='Tele {}'.format(i))                        
 
 plt.colorbar(mageisObj.sc, ax=ax[1], cax=alphaCbar, label=r'Flux $(keV \ cm^2 \ s \ sr)^{-1}$')
