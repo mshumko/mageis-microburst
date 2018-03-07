@@ -52,14 +52,15 @@ mageisObj = plot_mageis.PlotMageis(rb_id, tBounds[0], 'highrate',
 # Set up three panels to plot MagEIS timeseries around the microburst,
 # Highlight the times used for the PSD analysis, show MagEIS and RBSPICE 
 # Pitch angle evolution, and EMFISIS magnetometer data.
-npanels = 2
+npanels = 3
 fig = plt.figure(figsize = (11, 11), dpi = 80)
 gs = gridspec.GridSpec(npanels, 10)
 ax = npanels*[None]
 ax[0] = fig.add_subplot(gs[0,:-1])
+#axx = ax[0].twinx()
 for j in range(1, npanels):
     ax[j] = fig.add_subplot(gs[j, :-1], sharex = ax[0])
-alphaCbar = fig.add_subplot(gs[1, -1])
+alphaCbar = fig.add_subplot(gs[-1, -1])
 
 # Plot MagEIS
 t, j = mageisObj.getFluxTimeseries(smooth=10) # Get flux
@@ -67,7 +68,7 @@ print(j.shape)
 for ee in range(j.shape[1]-1):
     validj = np.where(j[:, ee] > 0)[0]
     ax[0].plot(t[validj], j[validj, ee], label='{}-{} keV'.format(mageisObj.Elow[ee], mageisObj.Ehigh[ee]))
-mageisObj.plotAlpha(E_ch=0, scatterS=50, ax=ax[1], 
+mageisObj.plotAlpha(E_ch=0, scatterS=50, ax=ax[-1], 
     plotCb=False, pltLabels=False, cmin=cmin, cmax=cmax, 
     downSampleAlpha=5) # Alpha
 ax[0].legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
@@ -91,6 +92,8 @@ for (tt, jj) in zip(t, j):
             arrowprops=dict(arrowstyle="->",
                             connectionstyle="arc3"),
             )
+    # Plot panel(b)'s vertical lines
+    ax[1].axvline(tt, c='k')
 
 # plot RBSPICE
 # ax[1], p = rbspiceObj.plotTelecopeAlphaScatter(range(6, 12), ax=ax[1], 
@@ -102,11 +105,14 @@ idT = np.where((tBounds[0] < np.array(d['Epoch'][:])) &
                     (tBounds[1] > np.array(d['Epoch'][:])))[0]
 for (i, EBR) in enumerate(np.array(d['EBR']).T):
     print(i)
-    ax[0].plot(np.array(d['Epoch'])[idT], np.array(EBR[idT]), label='Tele {}'.format(i))                        
+    ax[1].plot(np.array(d['Epoch'])[idT], np.array(EBR[idT]), label='Tele {}'.format(i))        
 
-plt.colorbar(mageisObj.sc, ax=ax[1], cax=alphaCbar, label=r'Flux $(keV \ cm^2 \ s \ sr)^{-1}$')
-ax[1].set(facecolor='k', title='', ylabel='MagEIS 29-41 keV' + r'$\alpha_{L}$ (degrees)')
 ax[1].legend()
+ax[1].set(ylabel='counts/s', yscale='log', ylim=(4000, 20000), title='RBSPICE-A EBR L1')
+
+plt.colorbar(mageisObj.sc, ax=ax[-1], cax=alphaCbar, label=r'Flux $(keV \ cm^2 \ s \ sr)^{-1}$')
+ax[-1].set(facecolor='k', title='', ylabel='MagEIS 29-41 keV' + r'$\alpha_{L}$ (degrees)')
+ax[-1].legend()
 
 # plot EMFISIS magnetometer data
 ###b = spacepy.pycdf.CDF('/home/mike/research/rbsp/data/emfisis/rbsp{}/'
@@ -123,8 +129,8 @@ ax[0].set_title("RBSP-{} from {}".format(rb_id.upper(), tBounds[0].date()))
 second5s = mdates.SecondLocator(bysecond = range(0, 60, 5), 
                 interval = 1)
                 
-abcLabels = ['(a)', '(b)']
-abcColors = ['k', 'w']
+abcLabels = ['(a)', '(b)', '(c)']
+abcColors = ['k', 'w', 'k']
 
 for i, a in enumerate(ax):
     #a.xaxis.set_major_locator(second5s)
