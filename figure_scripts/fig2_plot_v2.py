@@ -13,13 +13,20 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.dates as mdates
+import matplotlib.ticker as ticker
+import matplotlib.colors
 from datetime import datetime, timedelta
+
+import spacepy.pycdf
 
 sys.path.insert(0, '/home/mike/research/mission-tools/rbsp/')
 import plot_mageis
 import plot_rbspice
 import fig1_plot
-import spacepy.pycdf
+
+sys.path.insert(0, '/home/mike/research/mageis-microburst/rabbit_holes')
+import fit_rbspice_pa
+import rbspice_alpha_fit_popt
 
 # "Interactive time range selection."
 tKey = 'muBurst'
@@ -39,12 +46,14 @@ times = {'muBurst':[datetime(2017, 3, 31, 11, 16, 40),
             'all':[datetime(2017, 3, 31, 11, 15), 
                     datetime(2017, 3, 31, 11, 20)]}
 tBounds = times[tKey]
-cmin = 2E4
-cmax = 5E5
+MAGEIS_MIN = 2E4
+MAGEIS_MAX = 5E5
+RBSPICE_MIN = 5E3
+RBSPICE_MAX = 1E4
 
 # Load the RBSPICE data
-rbspiceObj = plot_rbspice.plot_rbspice(rb_id, tBounds[0], tBounds=tBounds)
-rbspiceObj.loadData()
+# rbspiceObj = plot_rbspice.plot_rbspice(rb_id, tBounds[0], tBounds=tBounds)
+# rbspiceObj.loadData()
 #### Load MagEIS data
 mageisObj = plot_mageis.PlotMageis(rb_id, tBounds[0], 'highrate', 
     tRange=tBounds, instrument='low')
@@ -54,24 +63,23 @@ mageisObj = plot_mageis.PlotMageis(rb_id, tBounds[0], 'highrate',
 # Pitch angle evolution, and EMFISIS magnetometer data.
 npanels = 3
 fig = plt.figure(figsize = (11, 11), dpi = 80)
-gs = gridspec.GridSpec(npanels, 10)
+gs = gridspec.GridSpec(npanels, 15)
 ax = npanels*[None]
-ax[0] = fig.add_subplot(gs[0,:-1])
+ax[0] = fig.add_subplot(gs[0,:-2])
 #axx = ax[0].twinx()
 for j in range(1, npanels):
-    ax[j] = fig.add_subplot(gs[j, :-1], sharex = ax[0])
-alphaCbar = fig.add_subplot(gs[-1, -1])
+    ax[j] = fig.add_subplot(gs[j, :-2], sharex = ax[0])
+alphaCbar = fig.add_subplot(gs[-1, -2:])
 
 # Plot MagEIS
 t, j = mageisObj.getFluxTimeseries(smooth=10) # Get flux
-print(j.shape)
 for ee in range(j.shape[1]-1):
     validj = np.where(j[:, ee] > 0)[0]
     ax[0].plot(t[validj], j[validj, ee], label='{}-{} keV'.format(mageisObj.Elow[ee], mageisObj.Ehigh[ee]))
 mageisObj.plotAlpha(E_ch=0, scatterS=50, ax=ax[-1], 
-    plotCb=False, pltLabels=False, cmin=cmin, cmax=cmax, 
+    plotCb=False, pltLabels=False, cmin=MAGEIS_MIN, cmax=MAGEIS_MAX, 
     downSampleAlpha=5) # Alpha
-ax[0].legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
+ax[0].legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=0., fontsize=10)
 ax[0].set(ylabel=('MagEIS-A J \n ' + 
     r'$(cm^2 \ sr \ s \ keV)^{-1}$'), yscale='log')
 
@@ -99,38 +107,63 @@ for (tt, jj) in zip(t, j):
 # ax[1], p = rbspiceObj.plotTelecopeAlphaScatter(range(6, 12), ax=ax[1], 
 #     cmin=cmin, cmax=cmax, telescopes=range(4), Elabel=False, plotColorbar=False)
 
+# PLOT EBR time series
 d = spacepy.pycdf.CDF('/home/mike/research/rbsp/data/rbspice/rbspa/'
                         'rbsp-a-rbspice_lev-1_EBR_20170331_v1.1.2-01')
 idT = np.where((tBounds[0] < np.array(d['Epoch'][:])) & 
                     (tBounds[1] > np.array(d['Epoch'][:])))[0]
-for (i, EBR) in enumerate(np.array(d['EBR']).T):
-    print(i)
-    ax[1].plot(np.array(d['Epoch'])[idT], np.array(EBR[idT]), label='Tele {}'.format(i))        
 
-ax[1].legend()
-ax[1].set(ylabel='counts/s', yscale='log', ylim=(4000, 20000), title='RBSPICE-A EBR L1')
+t = np.array(d['Epoch'][idT[0]:idT[-1]])
+EBR = np.array(d['EBR'][:][idT[0]:idT[-1]])
+for (i) in range(5): #enumerate(np.array(d['EBR'])[:, idT].T):
+    ax[1].plot(t, EBR[:,i], label='Telescope {}'.format(i+1))        
 
-plt.colorbar(mageisObj.sc, ax=ax[-1], cax=alphaCbar, label=r'Flux $(keV \ cm^2 \ s \ sr)^{-1}$')
-ax[-1].set(facecolor='k', title='', ylabel='MagEIS 29-41 keV' + r'$\alpha_{L}$ (degrees)')
+ax[1].legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=0., fontsize=10)
+
+popt = rbspice_alpha_fit_popt.popt
+t0 = rbspice_alpha_fit_popt.t0
+# Plot EBR pitch angles.
+for i in range(5):
+    sc = ax[-1].scatter(t, fit_rbspice_pa.sin_fit(mdates.date2num(t)-t0, *popt[i]), 
+                        c=EBR[:, i], vmin=RBSPICE_MIN, vmax=RBSPICE_MAX, cmap=plt.get_cmap('rainbow'),
+                        norm=matplotlib.colors.LogNorm())
+
+ax[1].set(ylabel='RBSPICE EBR\n(counts/s)', yscale='log', ylim=(4000, 20000), title='RBSPICE-A EBR L1')
+ax[-1].set(facecolor='k', title='', ylabel=r'$\alpha_{L}$ (degrees)')
 ax[-1].legend()
-
-# plot EMFISIS magnetometer data
-###b = spacepy.pycdf.CDF('/home/mike/research/rbsp/data/emfisis/rbsp{}/'
-###    'rbsp-{}_magnetometer_4sec-geo_emfisis-L3_20170331_v1.6.1.cdf'.format(
-###    rb_id.lower(), rb_id.lower()))
-###idB = np.where((b['Epoch'][:] > tBounds[0]) & (b['Epoch'][:] < tBounds[1]+timedelta(minutes=1)))[0] 
-###ax[-1].plot(np.array(b['Epoch'])[idB], np.array(b['Magnitude'])[idB])
-###ax[-1].set_ylabel('|B| (nT)')
 
 ax[-1].set_xlabel('UTC')
 ax[0].set_title("RBSP-{} from {}".format(rb_id.upper(), tBounds[0].date()))
 
-# Ticks at every second
+
+def fmt(x, pos):
+    a, b = '{:.0e}'.format(x).split('e')
+    b = int(b)
+    return r'${} \times 10^{{{}}}$'.format(a, b)
+
+### COLORBAR CODE ###
+# Plot RBSPICE colorbar
+plt.colorbar(sc, ax=ax[-1], cax=alphaCbar,
+    format=ticker.FuncFormatter(fmt)) #r'Flux $(keV \ cm^2 \ s \ sr)^{-1}$')
+alphaCbar.set_ylabel('RBSPICE EBR (counts/s)', fontsize=10)
+alphaCbar.tick_params(labelsize=10) 
+alphaCbar.yaxis.set_label_position("left")
+
+
+# Plot the MagEIS colorbar
+alphaCbar2 = alphaCbar.twinx()
+alphaCbar2.set_yscale('log')
+alphaCbar2.set_ylim(MAGEIS_MIN, MAGEIS_MAX)
+alphaCbar2.tick_params(labelsize=10) 
+alphaCbar2.yaxis.set_label_position("right")
+alphaCbar2.set_ylabel('MagEIS J '+r'$(keV \ cm^2 \ s \ sr)^{-1}$', fontsize=10)
+
+### ADJUST ticks to be at every second ###
 second5s = mdates.SecondLocator(bysecond = range(0, 60, 5), 
                 interval = 1)
                 
 abcLabels = ['(a)', '(b)', '(c)']
-abcColors = ['k', 'w', 'k']
+abcColors = ['k', 'k', 'w']
 
 for i, a in enumerate(ax):
     #a.xaxis.set_major_locator(second5s)
@@ -152,7 +185,6 @@ ax[-1].axvline(datetime(2017, 3, 31, 11, 17, 2), c='w',
 ax[-1].axvline(datetime(2017, 3, 31, 11, 17, 13), c='w',
     ls='--')
 if tKey == 'muBurst':
-    print(tBounds[0] - timedelta(seconds=6))
     ax[0].set_xlim(tBounds[0] + timedelta(seconds=17), tBounds[1])
 fig.autofmt_xdate()
 gs.tight_layout(fig)
