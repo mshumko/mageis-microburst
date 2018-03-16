@@ -44,24 +44,38 @@ rbspiceT = np.asarray(d['Epoch'])
 popt = rbspice_alpha_fit_popt.popt
 t0 = rbspice_alpha_fit_popt.t0
 
-for t in burstTimes: 
+c = ['r', 'b', 'g', 'c', 'k']
+
+for (i, t) in enumerate(burstTimes): 
     # Find RBSPICE index for each time in burstTimes.
     idT = np.where(rbspiceT > t)[0][0]
     EBR = np.array(d['EBR'][:][idT])
-    a = [None]*6
+    a = [None]*5
     
     for tel in range(5):
         # Calculate pitch angle for each telescope at time t.
         a[tel] = fit_rbspice_pa.sin_fit(
             mdates.date2num(rbspiceT[idT])-t0, *popt[tel])
+            
+    # Sort the pitch angles
+    a, counts = zip(*sorted(zip(a, d['EBR'][idT][:-1])))
     # Plot results
-    plt.scatter(a, d['EBR'][:][idT])
+    plt.errorbar(a, counts, yerr=np.sqrt(counts), fmt='o-',
+                color=c[i], label='Micorburst #{}'.format(i+1))
+    plt.xlim(90, 180)
     plt.xlabel(r'$\alpha_L$ [deg]')
     plt.ylabel('RBSPICE EBR [counts/s]')
-    plt.title('RBSPICE and MagEIS PA at {}'.format(t))
-    plt.savefig('{}_rbspice_alpha.png'.format(t))
-    plt.close()
+    plt.title('RBSPICE and MagEIS PA for microbursts')# {}\n{}'.format(i+1, t))
+    #plt.savefig('/home/mike/Dropbox/0_grad_work/'
+    #            'mageis_microburst/plots/RBSPICE/'
+    #            '{}_rbspice_alpha.png'.format(t))
+    #plt.close()
 
+plt.legend()
+plt.savefig('/home/mike/Dropbox/0_grad_work/'
+                'mageis_microburst/plots/RBSPICE/'
+                'rbspice_alpha.png')
+plt.close()
 
 
 
