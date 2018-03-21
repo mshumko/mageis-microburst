@@ -85,23 +85,28 @@ ax[0].set(ylabel=('MagEIS-A J \n ' +
 
 # Plot arrow to microbursts
 # Arrow params
-t = np.array([datetime(2017, 3, 31, 11, 17, 9, 777000),
+arrowT = np.array([datetime(2017, 3, 31, 11, 17, 9, 777000),
             datetime(2017, 3, 31, 11, 17, 10, 250000),
             datetime(2017, 3, 31, 11, 17, 10, 860000),
             datetime(2017, 3, 31, 11, 17, 11, 500000)])
-j = np.array([
-    [2E5, 1E6], [2E5, 1E6], [2E5, 1E6], [3E5, 1E6]
-])
+arrowJ = np.array([[2E5, 1E6], [2E5, 1E6], [2E5, 1E6], [3E5, 1E6]])
+arrowCounts = np.array([[4E3, 7E3], [4E3, 7E3], [4E3, 7E3], [4E3, 7E3]])
 
-for (tt, jj) in zip(t, j):
+for (tt, jj, cc) in zip(arrowT, arrowJ, arrowCounts):
+    # Draw arrows to show the microburst times in the MagEIS data.
     ax[0].annotate('',
             xy=(mdates.date2num(tt), jj[0]), xycoords='data',
             xytext=(mdates.date2num(tt), jj[1]), textcoords='data',
             arrowprops=dict(arrowstyle="->",
                             connectionstyle="arc3"),
             )
-    # Plot panel(b)'s vertical lines
-    ax[1].axvline(tt, c='k')
+    # Draw arrows to show the microburst times in the RBSPICE data.
+    ax[1].annotate('',
+            xy=(mdates.date2num(tt), cc[0]), xycoords='data',
+            xytext=(mdates.date2num(tt), cc[1]), textcoords='data',
+            arrowprops=dict(arrowstyle="<-", facecolor='black',
+                            connectionstyle="arc3"),
+            )
 
 # plot RBSPICE
 # ax[1], p = rbspiceObj.plotTelecopeAlphaScatter(range(6, 12), ax=ax[1], 
@@ -128,7 +133,7 @@ for i in range(5):
                         c=EBR[:, i], vmin=RBSPICE_MIN, vmax=RBSPICE_MAX, cmap=plt.get_cmap('rainbow'),
                         norm=matplotlib.colors.LogNorm())
 
-ax[1].set(ylabel='RBSPICE EBR\n(counts/s)', yscale='log', ylim=(4000, 20000), title='RBSPICE-A EBR L1')
+ax[1].set(ylabel='RBSPICE-A EBR\n(counts/s)', yscale='log', ylim=(4000, 20000))
 ax[-1].set(facecolor='k', title='', ylabel=r'$\alpha_{L}$ (degrees)')
 ax[-1].legend()
 
@@ -174,16 +179,17 @@ for i, a in enumerate(ax):
     # Add subplot labels
     a.text(.01, 0.95, abcLabels[i], transform=a.transAxes, va='top', 
             color=abcColors[i])     
+    # Draw vertical lines to show the resonant diffusion analysis time range.
+    if i in [0, 1]:
+        c = 'k'
+    else:
+        c = 'w'
+    a.axvline(datetime(2017, 3, 31, 11, 17, 2), c=c,
+        ls='--')
+    a.axvline(datetime(2017, 3, 31, 11, 17, 13), c=c,
+        ls='--')
     
-# Draw vertical lines to show the resonant diffusion analysis time range.
-ax[0].axvline(datetime(2017, 3, 31, 11, 17, 2), c='k',
-    ls='--')
-ax[0].axvline(datetime(2017, 3, 31, 11, 17, 13), c='k',
-    ls='--')
-ax[-1].axvline(datetime(2017, 3, 31, 11, 17, 2), c='w',
-    ls='--')
-ax[-1].axvline(datetime(2017, 3, 31, 11, 17, 13), c='w',
-    ls='--')
+# adjust plot time range
 if tKey == 'muBurst':
     ax[0].set_xlim(tBounds[0] + timedelta(seconds=17), tBounds[1])
 fig.autofmt_xdate()

@@ -63,18 +63,18 @@ for (i, t) in enumerate(burstTimes):
     qa, qCounts = zip(*sorted(zip(qa, d['EBR'][qIdT][:-1])))
     
     # Plot results
-    ratio = np.subtract(list(counts), list(qCounts))
+    ratio = np.divide(list(counts), list(qCounts))
     plt.errorbar(qa, ratio, yerr=None, fmt='o--',
                 color=c[i], label='Microburst #{}'.format(i+1))
 
 plt.xlim(90, 180)
 plt.xlabel(r'$\alpha_L$ [deg]')
-plt.ylabel('RBSPICE EBR Difference [counts/s]')
-plt.title('RBSPICE and MagEIS microburst - quiet count difference')# {}\n{}'.format(i+1, t))
+plt.ylabel('RBSPICE EBR Ratio')
+plt.title('RBSPICE microburst/quiet ratio')# {}\n{}'.format(i+1, t))
 
 
 plt.legend()
 plt.savefig('/home/mike/Dropbox/0_grad_work/'
                 'mageis_microburst/plots/RBSPICE/'
-                'rbspice_pad_difference.png')
+                'rbspice_pad_ratio.png')
 plt.close()
