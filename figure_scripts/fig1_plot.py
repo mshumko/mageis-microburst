@@ -49,14 +49,24 @@ def get_mageis_params(ids):
                 
 def plot_mageis(rb_id, plotType, tRange, highrate, ax = None, Alpha = None, 
         channels = None, Nsmooth = None, cax = None, downSampleAlpha = 1, vmin=None, vmax=None):
-    fluxObj = plot_mageis_lib.PlotMageis(rb_id, tRange[0], 'highrate', tRange=tRange, instrument='low')
-    
+    fluxObj = plot_mageis_lib.PlotMageis(rb_id, tRange[0], 'highrate', 
+                                        tRange=tRange, instrument='low')
+
+    # This rb_id if statement is there because I accidently used the internal 
+    # "main rate" data product that is already in flux units, and does not 
+    # need to be converted.
+    if rb_id.lower() == 'b':
+        pltFlux = False
+    else:
+        pltFlux = True
+
     if plotType == 't':
-        ax = fluxObj.plotTimeseries(ax=ax, pltLabels=False)
+        ax = fluxObj.plotTimeseries(ax=ax, pltLabels=False, pltFlux=pltFlux)
         ax.set_ylabel(r'MagEIS LOW J' + '\n' + \
         r'$(keV \ cm^2 \ sr \ s)^{-1}$')
     elif plotType == 'a':
-        ax = fluxObj.plotAlpha(ax=ax, cax=cax, cmin=vmin, cmax=vmax, E_ch=channels, pltLabels=False, scatterS=40)
+        ax = fluxObj.plotAlpha(ax=ax, cax=cax, cmin=vmin, cmax=vmax, E_ch=channels, 
+                                    pltLabels=False, scatterS=40, pltFlux=pltFlux)
         ax.set_ylabel('MagEIS {}-{} keV\n'.format(
             fluxObj.Elow[channels], fluxObj.Ehigh[channels]) +
             r'$\alpha_{L}$ (deg)')  
@@ -168,7 +178,7 @@ if __name__ == '__main__':
         axi.legend_.remove() # Remove legen
         
     ax[panelDict['rbspa_mageis_timeseries']].set_ylim(bottom = 10**4)
-    ax[panelDict['rbspb_mageis_timeseries']].set_ylim(bottom = 10**5)
+    ax[panelDict['rbspb_mageis_timeseries']].set_ylim(bottom = 10**4)
     
     # Annotate the panels with position information
     rbspaText = 'L* = {}\nMLT = {}\nMLAT = {}'.format(round(np.mean(Lstar_A), 1), 
