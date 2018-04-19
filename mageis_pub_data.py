@@ -15,7 +15,7 @@ import plot_mageis
 
 START_TIME = datetime(2017, 3, 31, 11, 15, 0)
 END_TIME = datetime(2017, 3, 31, 11, 20, 0)
-SC_ID = 'A'
+SC_ID = 'B'
 
 if SC_ID == 'A':
     fluxConvert = 'True'
@@ -47,23 +47,30 @@ def get_mageis_params(ids):
     if ids.upper() == 'B':
         Emid = [32, 51, 74, 101, 132, 168, 208] # keV
         Elow = [27, 43, 63, 88, 117, 152, 193] # keV
-        Ehigh = [39, 63, 88, 117, 150, 188] # keV
+        Ehigh = [39, 63, 88, 117, 150, 188, 231] # keV
         # Units of (keV cm^2 sr)
         G0dE = [4.33E-2, 5.41E-2, 5.926E-2, 6.605E-2, 6.460E-2,
             6.23E-2, 5.96E-2]
     return {'Emid':Emid, 'Elow':Elow, 'Ehigh':Ehigh, 'G0dE':G0dE}
+    
+Edict = get_mageis_params(SC_ID)
+Emax = len(Edict['Emid'])
+#FEDU_Energy = np.array([Edict['Elow'], Edict['Ehigh']])
+FEDU_Energy = np.array([[*Edict['Elow']], [*Edict['Ehigh']]], dtype=float).T
 
 ### WRITE TO FILE ###
 fName = '{}_rbsp{}_mageis_low_highrate.cdf'.format(
                         START_TIME.date(), SC_ID.lower())
 with pycdf.CDF(fName, '') as outF:
     outF['Epoch'] = f.times
-    outF['FEDU'] = f.flux
+    outF['FEDU'] = f.flux[:, :Emax]
     outF['FEDU_Alpha'] = alphas
+    outF['FEDU_Energy'] = FEDU_Energy
 
     # Copy attributes
     outF.attrs = f.magEISdata.attrs
     outF['Epoch'].attrs = f.magEISdata['Epoch'].attrs
     outF['FEDU'].attrs = f.magEISdata['FEDU'].attrs
+    outF['FEDU'].attrs['UNITS'] = '(cm^2 s sr keV)^-1'
     outF['FEDU_Alpha'].attrs = f.magEISdata['FEDU_Alpha'].attrs
-
+    outF['FEDU_Energy'].attrs = {'CATDESC':'Lower and upper energy bounds of each energy channel', 'UNITS': 'keV'}
